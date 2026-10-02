@@ -162,6 +162,12 @@ body{background:var(--cloud)}
 .btn.sun{color:#001e25}.btn.tomato{color:#fff}
 .seg button[aria-pressed=true]{background:#00687a;color:#fff}
 .slot-top .instrument{color:color-mix(in srgb,var(--c) 75%,var(--ink))}
+/* Color-coded record sleeves */
+.slot{border:2px solid color-mix(in srgb,var(--c) 65%,var(--line));background:linear-gradient(color-mix(in srgb,var(--c) 7%,var(--paper)),var(--paper) 60%);}
+.slot h2{flex:0 0 calc(100% + 36px);width:calc(100% + 36px);margin:-18px -18px 4px;padding:17px 18px;background:var(--c);color:var(--title-ink,#fff9e9);border-radius:13px 13px 0 0;}
+.slot-top .instrument{color:inherit}
+.slot .reroll{border-color:color-mix(in srgb,var(--c) 55%,var(--line));background:color-mix(in srgb,var(--c) 12%,var(--paper));}
+:root[data-theme=dark] .slot{border-color:color-mix(in srgb,var(--c) 80%,var(--line));}
 </style>
 </head>
 <body>
@@ -688,6 +694,7 @@ function createSlot(d, i){
   const el = document.createElement('article');
   el.className = 'slot empty';
   el.style.setProperty('--c', d.color);
+  el.style.setProperty('--title-ink',['chords','melody'].includes(d.role)?'#001e25':'#fff9e9');
   el.innerHTML = `
     <div class="slot-top">
       <h2>${instrumentIcon(d.role)}${d.title}</h2>
@@ -756,7 +763,7 @@ function createSlot(d, i){
   roleSel.addEventListener('change',()=>{
     if(s.lock){ roleSel.value=s.role; return toast('Unlock this slot to change its role.'); }
     remember(); const def=[...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#a42532'}].find(d=>d.role===roleSel.value);
-    Object.assign(s,def); el.style.setProperty('--c',def.color); el.querySelector('h2').innerHTML=instrumentIcon(def.role)+def.title;
+    Object.assign(s,def); el.style.setProperty('--c',def.color); el.style.setProperty('--title-ink',['chords','melody'].includes(def.role)?'#001e25':'#fff9e9'); el.querySelector('h2').innerHTML=instrumentIcon(def.role)+def.title;
     reroll(s);
   });
   el.querySelector('.folder-select').addEventListener('change',e=>{
