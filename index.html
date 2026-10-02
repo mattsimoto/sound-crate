@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="version" content="1.3.0">
+<meta name="version" content="1.4.0">
 <title>Sound Crate</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f39f16%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M3%2014v4M8%209v14M13%203v26M18%207v18M23%2011v10M28%2014v4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -169,12 +169,17 @@ body{background:var(--cloud)}
 .slot-top .instrument{color:inherit}
 .slot .reroll{border-color:color-mix(in srgb,var(--c) 55%,var(--line));background:color-mix(in srgb,var(--c) 12%,var(--paper));}
 :root[data-theme=dark] .slot{border-color:color-mix(in srgb,var(--c) 80%,var(--line));}
+
+.pads-panel{max-width:1392px;margin:24px auto;padding:22px;background:var(--paper);border:1px solid var(--line);border-radius:18px}
+.pad-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:16px 0}.pad-cell{min-width:0}.pad-cell select{width:100%;margin-bottom:8px}.sample-pad{width:100%;min-height:94px;background:#00687a;color:#fff9e9;border:2px solid #009a9b;border-radius:14px;font:inherit;cursor:pointer}.sample-pad.active{background:#f39f16;color:#001e25}.sample-pad strong{display:block;font-size:24px}.recovery-banner{padding:18px;background:var(--paper);color:var(--ink);border:2px solid #f39f16;border-radius:14px;margin:16px auto;max-width:900px}.trim-controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}.trim-controls input{width:100%}#trimWave{width:100%;height:90px;background:#001e25;border-radius:10px}#padStatus{color:var(--muted)}
+@media(max-width:640px){.pad-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pads-panel{margin:16px 14px}.trim-controls{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <!-- ============ START ============ -->
 <div class="theme-switch start-theme" aria-label="Color theme"><button data-theme-choice="light" aria-pressed="true">☀ Light</button><button data-theme-choice="dark" aria-pressed="false">☾ Dark</button></div>
+<aside id="recoveryBanner" class="recovery-banner" hidden><p id="recoveryMessage"></p><button class="btn sun" id="restoreRecovery">Restore session</button> <button class="btn" id="discardRecovery">Start fresh</button></aside>
 <section class="start" id="start">
   <div class="start-card">
     <div class="crate-art" aria-hidden="true">
@@ -236,7 +241,7 @@ body{background:var(--cloud)}
     <button class="btn tomato" id="recordSound">Record a sound</button>
   </header>
 
-  <main class="grid" id="crate"></main>
+  <section class="pads-panel" aria-labelledby="padsTitle"><h2 id="padsTitle">Play your sounds</h2><p>Choose a sound for each pad. Tap it or use A S D F / J K L ;. Pads play the original sound, without tempo fitting.</p><div id="padGrid" class="pad-grid"></div><button class="btn tomato" id="recordPads">● Record pads</button> <button class="btn" id="stopPads" disabled>■ Stop</button> <button class="btn sun" id="addPadTake" disabled>Add performance to sounds</button><p id="padStatus" role="status">Record a performance up to 60 seconds. The mixer pauses while you record.</p><p id="recoveryStatus" role="status"></p></section><main class="grid" id="crate"></main>
 
   <footer class="dock">
     <div class="dock-in">
@@ -265,6 +270,7 @@ body{background:var(--cloud)}
   <button class="btn" id="endRecord" disabled>■ Stop</button>
   <div id="recordResult" hidden>
     <p><audio id="recordPreview" controls style="max-width:100%"></audio></p>
+    <canvas id="trimWave" width="480" height="90" aria-label="Recording waveform; shaded areas are trimmed out"></canvas><div class="trim-controls"><label>Start (seconds)<input id="trimStart" type="number" min="0" step="0.01" value="0"></label><label>End (seconds)<input id="trimEnd" type="number" min="0" step="0.01"></label><label>Fade in (seconds)<input id="trimFadeIn" type="number" min="0" max="2" step="0.01" value="0.01"></label><label>Fade out (seconds)<input id="trimFadeOut" type="number" min="0" max="2" step="0.01" value="0.03"></label></div><p><button class="btn" id="applyTrim">Apply trim & fades</button> <button class="btn" id="trimSilence">Trim silence</button> <button class="btn" id="resetTrim">Reset to original</button> <button class="btn" id="saveEdited">Save edited WAV</button></p>
     <p><label for="recordName">Sound name</label> <input id="recordName" maxlength="80" placeholder="My new sound"></p>
     <p><label for="recordRole">Sound type</label> <select id="recordRole">
       <option value="auto">Guess for me</option><option value="drums">Drums / hits</option><option value="bass">Bass</option>
@@ -325,6 +331,8 @@ body{background:var(--cloud)}
 </dialog>
 
 <script>
+let padAssignments=Array(8).fill(null),padSources=new Set(),padRecording=false,padEvents=[],padStarted=0,padTimer=null,padTake=null,padGeneration=0;
+const padKeys=['a','s','d','f','j','k','l',';'];
 const rolePaths={drums:'M4 9c0-5 24-5 24 0v15c0 5-24 5-24 0V9m0 0c0 5 24 5 24 0M8 13v11m8-10v12m8-13v11',bass:'M12 18L25 3l4 3-14 15m-4-5c-6-3-11 3-7 9s12 4 13-2c1-4-2-7-6-7',chords:'M3 5h26v22H3zM10 5v22m6-22v22m6-22v22M8 5v12m6-12v12m6-12v12m6-12v12',melody:'M11 23V6l16-3v17M11 7l16-3M11 23c0 6-9 6-9 1s9-5 9-1m16-3c0 6-9 6-9 1s9-5 9-1',texture:'M3 9l13-6 13 6-13 6zM3 16l13 6 13-6M3 23l13 6 13-6',wild:'M5 5h22v22H5zM10 10h1m10 0h1m-6 6h1m-7 6h1m10 0h1',vocal:'M12 4h8v14h-8zM8 13v4c0 12 16 12 16 0v-4M16 26v4m-5 0h10'};
 function instrumentIcon(role){return `<span class="instrument" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${rolePaths[role]||rolePaths.wild}"/></svg></span>`;}
 function applyTheme(theme){document.documentElement.dataset.theme=theme;document.querySelectorAll('[data-theme-choice]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.themeChoice===theme)));try{localStorage.setItem('sound-crate-theme',theme)}catch{}}
@@ -608,6 +616,8 @@ function shuffleArr(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.r
 
 function newSession(){
   stop();
+  stopPadSources(); clearTimeout(padTimer); padRecording=false;padEvents=[];padTake=null;padAssignments=Array(8).fill(null);
+  $('#recordPads').disabled=false; $('#stopPads').disabled=true; $('#addPadTake').disabled=true;
   state.session++;
   state.renderToken++;
   past.length=0; future.length=0; updateHistoryButtons();
@@ -1108,7 +1118,7 @@ function releaseMic(){
 function clearRecording(){
   $('#recordPreview').pause(); $('#recordPreview').removeAttribute('src');
   if(mic.url) URL.revokeObjectURL(mic.url);
-  mic.buffer=mic.wav=mic.url=null; $('#recordResult').hidden=true;
+  mic.original=null; mic.buffer=mic.wav=mic.url=null; $('#recordResult').hidden=true;
 }
 function recordButtons(){
   const active=['requesting','recording','processing'].includes(mic.phase);
@@ -1209,7 +1219,7 @@ async function beginRecording(){
           for(let c=0;c<2;c++) stereo.copyToChannel(buffer.getChannelData(c),c);
           buffer=stereo;
         }
-        mic.buffer=buffer; mic.wav=wavBlob(buffer); mic.url=URL.createObjectURL(mic.wav);
+        mic.original=buffer; mic.buffer=buffer; mic.wav=wavBlob(buffer); mic.url=URL.createObjectURL(mic.wav); initTrim();
         $('#recordPreview').src=mic.url; $('#recordResult').hidden=false;
         mic.phase='recorded'; recordButtons();
         recordStatus('Recorded '+buffer.duration.toFixed(1)+' seconds.'+(mic.clipped?' Some input was very loud; record again farther from the mic if it sounds distorted.':' Preview it, then add it to your sounds.'));
@@ -1458,8 +1468,8 @@ function unpackBuffer(value){
   });
   return buffer;
 }
-async function saveProject(exportFile=true){
-  if(!slots.some(s=>s.buffer)) return toast('Choose some sounds before saving.');
+async function saveProject(exportFile=true,includeCollection=false){
+  if(!slots.some(s=>s.buffer) && !(includeCollection && state.ready.length)) return toast('Choose some sounds before saving.');
   if(state.busy || slots.some(s=>s.el.classList.contains('loading'))) return toast('Wait for the sounds to finish fitting.');
   const ses=state.session, settings={bpm:state.bpm,tonic:state.tonic,minor:state.minor,bars:state.bars,safety:state.safety,hype:state.hype};
   const snapshot=slots.map(s=>({item:s.item,buffer:s.buffer,part:s.part,semis:s.semis,usedBeats:s.usedBeats,
@@ -1468,7 +1478,7 @@ async function saveProject(exportFile=true){
   const button=$('#saveProject'); button.disabled=true;
   try{
     const sounds=[], ids=new Map();
-    for(const s of snapshot){
+    for(const s of [...snapshot,...state.ready.filter(it=>includeCollection || padAssignments.includes(it.id)).map(item=>({item,buffer:true}))]){
       if(!s.item || !s.buffer || ids.has(s.item)) continue;
       const original=await getBuffer(s.item,true);
       if(ses!==state.session) return;
@@ -1477,7 +1487,7 @@ async function saveProject(exportFile=true){
       await sleep(0);
     }
     if(ses!==state.session) return;
-    const project={format:'sound-crate',version:2,settings,sounds,
+    const project={format:'sound-crate',version:2,settings,sounds,pads:padAssignments.map(id=>{const item=state.ready.find(it=>it.id===id);return ids.has(item)?ids.get(item):null;}),
       slots:snapshot.map(s=>({...s,item:undefined,buffer:undefined,
         sound:s.item && s.buffer ? ids.get(s.item) : null, audio:s.buffer ? packBuffer(s.buffer) : null}))};
     const blob=new Blob([JSON.stringify(project)],{type:'application/json'});
@@ -1499,7 +1509,7 @@ async function openProject(file){
     if(project.format!=='sound-crate' || ![1,2].includes(project.version) || !p ||
       !Number.isInteger(p.bpm) || p.bpm<70 || p.bpm>160 || !Number.isInteger(p.tonic) || p.tonic<0 || p.tonic>11 ||
       typeof p.minor!=='boolean' || ![1,2,4].includes(p.bars) ||
-      !Array.isArray(project.sounds) || project.sounds.length>12 || !Array.isArray(project.slots) || project.slots.length<1 || project.slots.length>12 ||
+      !Array.isArray(project.sounds) || project.sounds.length>512 || !Array.isArray(project.slots) || project.slots.length<1 || project.slots.length>12 ||
       (project.version===2 && (!Number.isFinite(p.safety) || p.safety<0 || p.safety>100 || typeof p.hype!=='boolean')))
       throw new Error('Invalid project');
     // Validate everything before replacing the current mix.
@@ -1512,6 +1522,7 @@ async function openProject(file){
       if(s.folder!==undefined && typeof s.folder!=='string') throw new Error('Invalid source folder');
       return {id:'project_'+i,name:s.name,a,favorite:!!s.favorite,folder:s.folder || 'Imported files',buf:unpackBuffer(s.audio)};
     });
+    if(project.pads!==undefined && (!Array.isArray(project.pads) || project.pads.length!==8 || project.pads.some(i=>i!==null && (!Number.isInteger(i)||!sounds[i])))) throw new Error('Invalid pads');
     const restored=project.slots.map((s,i)=>{
       s={...s,gainDB:s.gainDB??0,octave:s.octave??0,timeFactor:s.timeFactor??1,steps:s.steps??Array(16).fill(true),repeat4:s.repeat4??false,folder:s.folder??''};
       if(typeof s.folder!=='string') throw new Error('Invalid folder');
@@ -1556,6 +1567,7 @@ async function openProject(file){
       }
       updateSlotUI(s);
     });
+    padAssignments=(project.pads||Array(8).fill(null)).map(i=>i===null?null:sounds[i].id); refreshPads();
     slots.forEach(applyMix); updateStatus(); updateButtons();
     syncGlobalUI(); updateHype();
     toast('Project opened. Press play to continue.');
@@ -1627,6 +1639,7 @@ function openCrate(){ document.body.classList.add('has-crate'); $('#startErr').h
 function showStartErr(msg){ const e=$('#startErr'); e.textContent=msg; e.hidden=false; }
 function setStatus(t){ $('#status').textContent = t; }
 function updateStatus(){
+  refreshPads();
   if(state.busy) return setStatus('Re-fitting every sound…');
   const r = state.ready.length;
   if(state.queue.length) setStatus(`Listening to your sounds: ${state.checked} of ${state.total} checked, ${r} ready to use`);
@@ -1703,7 +1716,7 @@ $('#endRecord').addEventListener('click',stopRecording);
 $('#refreshMics').addEventListener('click',()=>refreshMicInputs().catch(()=>recordStatus('Could not list microphones. Check the USB connection and try again.')));
 $('#micInput').addEventListener('change',()=>{releaseMic();mic.phase='idle';recordButtons();recordStatus('Input changed. Press Enable microphone or Record to use it.');});
 $('#addRecording').addEventListener('click',addRecordedSound);
-$('#downloadRecording').addEventListener('click',()=>{if(mic.wav) download(mic.wav,safeName($('#recordName').value || 'recording')+'.wav');});
+
 $('#redoRecording').addEventListener('click',()=>{clearRecording();mic.phase='idle';recordButtons();beginRecording();});
 $('#closeRecording').addEventListener('click',()=>$('#recordDialog').close());
 $('#recordDialog').addEventListener('cancel',cancelRecording);
@@ -1794,6 +1807,47 @@ document.addEventListener('keydown', e => {
   if(e.code==='Space'){ e.preventDefault(); if(slots.some(s=>s.buffer)) state.playing ? stop() : play(); }
   else if(e.key==='r' || e.key==='R'){ if(state.ready.length){ audio(); remember(); rerollAll(); } }
 });
+
+/* Recording edits preserve the raw take. */
+function editedBuffer(original,start,end,fadeIn,fadeOut){
+  const rate=original.sampleRate;
+  if(![start,end,fadeIn,fadeOut].every(Number.isFinite)||start<0||end>original.duration||end-start<0.05||fadeIn<0||fadeOut<0||fadeIn>2||fadeOut>2) throw new Error('Choose at least 0.05 seconds within the recording, and fades between 0 and 2 seconds.');
+  const from=Math.round(start*rate),length=Math.min(original.length-from,Math.round((end-start)*rate));
+  const out=audio().createBuffer(original.numberOfChannels,length,rate);
+  for(let c=0;c<out.numberOfChannels;c++){const src=original.getChannelData(c),dst=out.getChannelData(c);for(let i=0;i<length;i++){const gain=Math.min(1,fadeIn?i/(fadeIn*rate):1,fadeOut?(length-1-i)/(fadeOut*rate):1);dst[i]=src[from+i]*Math.max(0,gain);}}
+  return out;
+}
+function drawTrim(){const original=mic.original||mic.buffer;if(!original)return;const cv=$('#trimWave'),c=cv.getContext('2d');if(!c)return;const w=cv.width,h=cv.height;c.clearRect(0,0,w,h);c.fillStyle='#001e25';c.fillRect(0,0,w,h);const data=original.getChannelData(0);c.fillStyle='#62cbd9';for(let x=0;x<w;x++){let peak=0;const from=Math.floor(x*data.length/w),to=Math.max(from+1,Math.floor((x+1)*data.length/w));for(let i=from;i<to;i++)peak=Math.max(peak,Math.abs(data[i]));c.fillRect(x,h/2-Math.max(1,peak*h*.45),1,Math.max(2,peak*h*.9));}c.fillStyle='rgba(0,0,0,.65)';const a=Number($('#trimStart').value)/original.duration*w,b=Number($('#trimEnd').value)/original.duration*w;c.fillRect(0,0,a,h);c.fillRect(b,0,w-b,h);}
+function initTrim(){const original=mic.original||mic.buffer;if(!original)return;$('#trimStart').value=0;$('#trimEnd').value=String(original.duration);$('#trimEnd').max=original.duration;$('#trimStart').max=original.duration;$('#trimFadeIn').value=.01;$('#trimFadeOut').value=.03;drawTrim();}
+function setEditedPreview(buffer){if(mic.url)URL.revokeObjectURL(mic.url);mic.buffer=buffer;mic.wav=wavBlob(buffer);mic.url=URL.createObjectURL(mic.wav);$('#recordPreview').src=mic.url;recordStatus('Edited take: '+buffer.duration.toFixed(2)+' seconds. Preview it, then add the sound.');drawTrim();}
+$('#applyTrim').onclick=()=>{try{setEditedPreview(editedBuffer(mic.original||mic.buffer,+$('#trimStart').value,+$('#trimEnd').value,+$('#trimFadeIn').value,+$('#trimFadeOut').value));}catch(e){recordStatus(e.message);}};
+$('#trimSilence').onclick=()=>{const original=mic.original||mic.buffer;if(!original)return;let first=original.length,last=-1;for(let c=0;c<original.numberOfChannels;c++){const data=original.getChannelData(c);for(let i=0;i<data.length;i++)if(Math.abs(data[i])>.01){first=Math.min(first,i);last=Math.max(last,i);}}if(last<0)return recordStatus('No clear sound detected. Set the trim points manually.');$('#trimStart').value=Math.max(0,first/original.sampleRate-.01);$('#trimEnd').value=Math.min(original.duration,(last+1)/original.sampleRate+.01);drawTrim();recordStatus('Silence selected for removal. Press Apply trim & fades, then preview.');};
+$('#resetTrim').onclick=()=>{if(!mic.original)return;initTrim();setEditedPreview(mic.original);};
+$('#saveEdited').onclick=()=>{if(mic.buffer)download(wavBlob(mic.buffer),safeName($('#recordName').value||'edited-recording')+'.wav');};
+$('#downloadRecording').onclick=()=>{if(mic.original||mic.buffer)download(wavBlob(mic.original||mic.buffer),safeName($('#recordName').value||'recording')+'-original.wav');};
+['trimStart','trimEnd'].forEach(id=>$( '#'+id).addEventListener('input',drawTrim));
+/* Eight one-shot pads and a rendered performance take. */
+
+function refreshPads(){const grid=$('#padGrid');if(!grid)return;const signature=state.ready.map(it=>it.id+it.name).join('|')+JSON.stringify(padAssignments);if(grid.dataset.signature===signature)return;grid.dataset.signature=signature;grid.replaceChildren();for(let i=0;i<8;i++){const cell=document.createElement('div'),sel=document.createElement('select'),btn=document.createElement('button');cell.className='pad-cell';sel.setAttribute('aria-label','Sound for pad '+(i+1));const empty=document.createElement('option');empty.value='';empty.textContent='Choose a sound';sel.append(empty);state.ready.forEach(it=>{const o=document.createElement('option');o.value=it.id;o.textContent=it.name;sel.append(o);});sel.value=padAssignments[i]||'';sel.onchange=()=>{padAssignments[i]=sel.value||null;grid.dataset.signature='';};btn.className='sample-pad';btn.innerHTML='<strong>'+padKeys[i].toUpperCase()+'</strong>Pad '+(i+1);btn.setAttribute('aria-label','Play pad '+(i+1));btn.onpointerdown=()=>triggerPad(i);cell.append(sel,btn);grid.append(cell);}}
+async function triggerPad(i){const item=state.ready.find(it=>it.id===padAssignments[i]);if(!item)return;const generation=padGeneration;try{const ac=audio();if(ac.state==='suspended')await ac.resume();const buffer=await getBuffer(item,true);if(generation!==padGeneration)return;const source=ac.createBufferSource(),gain=ac.createGain();source.buffer=buffer;gain.gain.value=.6;source.connect(gain);gain.connect(master);if(padSources.size>=24){const oldest=padSources.values().next().value;try{oldest.stop();}catch{}padSources.delete(oldest);}
+  padSources.add(source);source.onended=()=>{padSources.delete(source);source.disconnect();gain.disconnect();};source.start();if(padRecording)padEvents.push({time:Math.max(0,ac.currentTime-padStarted),buffer});const button=$('#padGrid').children[i]?.querySelector('button');button?.classList.add('active');setTimeout(()=>button?.classList.remove('active'),150);}catch{toast('Could not play this pad. Choose another sound.');}}
+function stopPadSources(){padGeneration++;for(const source of padSources){try{source.stop();}catch{}}padSources.clear();}
+$('#recordPads').onclick=async()=>{try{const ac=audio();if(ac.state==='suspended')await ac.resume();if(!padAssignments.some(id=>state.ready.some(it=>it.id===id)))return toast('Choose at least one pad sound first.');stop();stopPadSources();padEvents=[];padTake=null;padStarted=ac.currentTime;padRecording=true;$('#recordPads').disabled=true;$('#stopPads').disabled=false;$('#addPadTake').disabled=true;$('#padStatus').textContent='Recording pads… play the pads, then press Stop.';padTimer=setTimeout(finishPads,60000);}catch{toast('Audio is unavailable.');}};
+async function finishPads(){if(!padRecording)return;padRecording=false;clearTimeout(padTimer);$('#stopPads').disabled=true;stopPadSources();const generation=padGeneration;const events=padEvents.slice();const elapsed=Math.min(60,Math.max(.05,audio().currentTime-padStarted));if(!events.length){$('#recordPads').disabled=false;$('#padStatus').textContent='No pads were played. Try again.';return;}try{const duration=Math.min(65,Math.max(elapsed,...events.map(e=>e.time+e.buffer.duration))),oc=new OfflineAudioContext(2,Math.ceil(duration*ctx.sampleRate),ctx.sampleRate);events.forEach(e=>{const source=oc.createBufferSource(),g=oc.createGain();source.buffer=e.buffer;g.gain.value=.6;source.connect(g);g.connect(oc.destination);source.start(e.time);});const rendered=await oc.startRendering();if(generation!==padGeneration)return;padTake=rendered;let peak=1;for(let c=0;c<2;c++)for(const v of padTake.getChannelData(c))peak=Math.max(peak,Math.abs(v));if(peak>1)for(let c=0;c<2;c++){const data=padTake.getChannelData(c);for(let i=0;i<data.length;i++)data[i]*=.95/peak;}$('#addPadTake').disabled=false;$('#padStatus').textContent='Performance ready: '+padTake.duration.toFixed(1)+' seconds. Add it to your sounds.';}catch{$('#padStatus').textContent='Could not render the performance. Try a shorter take.';}finally{$('#recordPads').disabled=false;}}
+$('#stopPads').onclick=finishPads;
+$('#addPadTake').onclick=()=>{if(!padTake)return;const name='Pad performance '+new Date().toLocaleTimeString(),a=analyzeRecording(padTake,name,'drums');if(!a)return toast('This performance is silent.');remember();state.ready.push({id:'pads_'+crypto.randomUUID(),name,buf:padTake,a,folder:'Recordings'});state.total++;state.checked++;padTake=null;$('#addPadTake').disabled=true;refreshPads();slots.forEach(updateSlotUI);updateStatus();toast('Performance added. Choose it from your Recordings folder.');};
+document.addEventListener('keydown',e=>{if(e.repeat||e.ctrlKey||e.metaKey||e.altKey||document.querySelector('dialog[open]')||/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(e.target.tagName)||e.target.isContentEditable)return;const i=padKeys.indexOf(e.key.toLowerCase());if(i>=0&&document.body.classList.contains('has-crate')){e.preventDefault();triggerPad(i);}});
+/* Device-local recovery includes the collection, selected sounds, pad assignments and controls. */
+let recoveryPending=false,recoverySaving=false,recoverySignature='',recoveryBlob=null;
+function recoveryFingerprint(){return JSON.stringify({session:state.session,settings:[state.bpm,state.tonic,state.minor,state.bars,state.safety,state.hype],pads:padAssignments,items:state.ready.map(it=>[it.id,it.favorite]),slots:slots.map(s=>[s.uid,s.item?.id,s.part,s.vol,s.panV,s.lock,s.mute,s.solo,s.gainDB,s.octave,s.timeFactor,s.steps,s.repeat4,s.folder])});}
+async function saveRecovery(){if(recoveryPending||recoverySaving||state.busy||padRecording||!state.ready.length||slots.some(s=>s.el.classList.contains('loading')))return;const signature=recoveryFingerprint();if(signature===recoverySignature)return;recoverySaving=true;const session=state.session;try{const blob=await saveProject(false,true);if(!blob||session!==state.session)return;await sessionStore('readwrite',store=>store.put({id:'automatic-recovery',name:'Automatic recovery',time:Date.now(),blob}));recoverySignature=signature;$('#recoveryStatus').textContent='Automatically saved on this device · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});}catch{$('#recoveryStatus').textContent='Automatic recovery unavailable. Use Save project for a backup.';}finally{recoverySaving=false;}}
+async function checkRecovery(){try{const saved=await sessionStore('readonly',store=>store.get('automatic-recovery'));if(saved){recoveryPending=true;recoveryBlob=saved.blob;$('#recoveryMessage').textContent='Continue your session from '+new Date(saved.time).toLocaleString()+'?';$('#recoveryBanner').hidden=false;}}catch{$('#recoveryStatus').textContent='Automatic recovery unavailable. Save a project file to keep your work.';}}
+$('#restoreRecovery').onclick=async()=>{if(!recoveryBlob)return;const ok=await openProject(recoveryBlob);if(ok){recoveryPending=false;recoveryBlob=null;$('#recoveryBanner').hidden=true;recoverySignature=recoveryFingerprint();$('#recoveryStatus').textContent='Recovered your session. Press Play when ready.';}};
+$('#discardRecovery').onclick=async()=>{try{await sessionStore('readwrite',store=>store.delete('automatic-recovery'));recoveryPending=false;recoveryBlob=null;$('#recoveryBanner').hidden=true;recoverySignature='';}catch{toast('Could not clear recovery.');}};
+setInterval(()=>{refreshPads();saveRecovery();},5000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopPadSources();if(padRecording)finishPads();saveRecovery();}});
+refreshPads();checkRecovery();
+
 </script>
 </body>
 </html>
