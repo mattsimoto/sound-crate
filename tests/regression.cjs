@@ -28,7 +28,20 @@ async function run(){
     past:[],future:[],updateHistoryButtons:noop,
     cache:new Map([['old',{}]]),slots:[slot],setPressed:noop,applyMix:noop,updateSlotUI:noop,updateButtons:noop,
     URL:{revokeObjectURL:u=>revoked=u}});
+  vm.runInContext(section('function defaultFitting','function buildFittingControls'),context);
   vm.runInContext(section('function newSession','function addFiles'),context);
+  const impulse=buffer(2,8000,8000);impulse.getChannelData(0)[0]=.5;impulse.getChannelData(1)[0]=-.25;
+  assert.equal(context.processEffects(impulse,context.defaultEffects(),120),impulse);
+  assert.equal(context.processEffects(impulse,{echo:1,bypass:true},120),impulse);
+  const echo=context.processEffects(impulse,{echo:1},120);
+  assert.equal(echo.length,impulse.length);assert.ok(echo.getChannelData(0)[2000]>.2);
+  assert.ok(echo.getChannelData(1)[2000]<-.1);assert.equal(impulse.getChannelData(0)[2000],0);
+  const room=context.processEffects(impulse,{reverb:1},120);assert.ok(room.getChannelData(0)[248]>0);
+  const buzz=buffer(1,8000,8000);for(let i=0;i<8000;i++)buzz.getChannelData(0)[i]=i%2?.5:-.5;
+  const filtered=context.processEffects(buzz,{filter:1},120);assert.ok(Math.abs(filtered.getChannelData(0)[4000])<.1);
+  const crunch=context.processEffects(impulse,{crunch:1},120);assert.notEqual(crunch.getChannelData(0)[0],.5);
+  for(const f of [echo,room,filtered,crunch])for(let c=0;c<f.numberOfChannels;c++)assert.ok(f.getChannelData(c).every(v=>Number.isFinite(v)&&Math.abs(v)<=.981));
+  assert.throws(()=>context.validateEffects({echo:2}));assert.throws(()=>context.validateFitting({sourceBpm:0}));
   context.newSession();
   assert.equal(context.state.session,2); assert.equal(context.state.renderToken,3);
   assert.equal(slot.mute,false); assert.equal(slot.solo,false); assert.equal(slot.lock,false);
