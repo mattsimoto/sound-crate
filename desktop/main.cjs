@@ -1,6 +1,6 @@
 const {app,BrowserWindow,ipcMain,nativeImage}=require('electron');
 const path=require('node:path'),fs=require('node:fs'),{pathToFileURL}=require('node:url');
-const {writeStem}=require('./stem-files.cjs');
+const {validateStem,writeStem}=require('./stem-files.cjs');
 let win,stemDirectory;
 const stems=new Map();
 const page=path.join(__dirname,'../index.html'),pageURL=pathToFileURL(page).href;
@@ -14,8 +14,10 @@ function createWindow(){
 }
 ipcMain.handle('prepare-stem',(event,value)=>{
   if(!trusted(event)) throw new Error('Invalid sender');
-  const file=writeStem(stemDirectory,value),old=stems.get(value.id);
-  if(old && old!==file){try{fs.unlinkSync(old);}catch{}}
+  validateStem(value);
+  const directory=fs.mkdtempSync(path.join(stemDirectory,'stem-'));
+  const file=writeStem(directory,value);
+  // Keep previous exports: a DAW may reference imported files without copying them.
   stems.set(value.id,file);
   return true;
 });
@@ -30,9 +32,10 @@ ipcMain.on('drag-stems',(event,ids)=>{
   try{event.sender.startDrag({file:files[0],files,icon});}catch(err){console.error('Native drag failed:',err.message);}
 });
 app.whenReady().then(()=>{
-  stemDirectory=fs.mkdtempSync(path.join(app.getPath('temp'),'sound-crate-stems-'));
+  const exportRoot=path.join(app.getPath('userData'),'DAW Stems');
+  fs.mkdirSync(exportRoot,{recursive:true});
+  stemDirectory=fs.mkdtempSync(path.join(exportRoot,'session-'));
   createWindow();
   app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0) createWindow();});
 });
 app.on('window-all-closed',()=>{if(process.platform!=='darwin') app.quit();});
-app.on('will-quit',()=>{if(stemDirectory) fs.rmSync(stemDirectory,{recursive:true,force:true});});

@@ -35,6 +35,7 @@ Reviewed the supplied 44.7-second Upcycle explainer, including the slot-adjustme
 
 - Browser-only OS dragging is not reliable across DAWs. In the web app, export WAVs and drag them from Finder. The desktop implementation prepares real local WAV files and calls Electron's native drag API.
 - Native dragging uses one fitted loop per occupied slot, without its mixer volume, pan, or gain. For longer files or mixer settings, use Export stems.
+- Native dragged WAVs stay in the desktop app's user-data DAW Stems folder after exit so DAWs that reference files do not lose them. Each prepared revision has its own path.
 - The sample finder uses filename hints and approximate analysis. Transposition aligns relative keys; it does not change a source recording's major/minor mode.
 - The video does not establish the hidden behavior of Upcycle's settings, menus, or selection algorithm. The equivalents above describe Sound Crate's behavior.
 - Saved sessions live in this browser/app profile; clearing its data removes them. Portable project files provide a backup and contain selected source sounds and fitted loops, not the entire imported collection.

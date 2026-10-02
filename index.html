@@ -136,6 +136,7 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
       <label class="btn big" for="filesIn" tabindex="0">Choose sound files</label>
       <button class="btn big sun" id="demoBtn">Try the demo sounds</button>
       <button class="btn big" id="openProjectStart">Open project</button>
+      <button class="btn big" id="savedSetsStart">Saved sessions</button>
     </div>
     <input class="vh" type="file" id="folderIn" webkitdirectory multiple>
     <input class="vh" type="file" id="filesIn" multiple accept="audio/*,.wav,.aif,.aiff,.mp3,.m4a,.flac,.ogg,.caf">
@@ -1369,6 +1370,7 @@ function updateButtons(){
   $('#dragStems').disabled = !has || state.busy || slots.some(s=>s.buffer && window.soundCrateDesktop && !s.nativeReady);
   $('#addSlot').disabled=slots.length>=12;
   $('#saveProject').disabled = !has || state.busy || slots.some(s => s.el.classList.contains('loading'));
+  $('#storeSession').disabled=!has || fitting;
   slots.forEach(s => { const rr=s.el.querySelector('.reroll'); rr.disabled = s.lock || !state.ready.length; });
 }
 const PLAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>';
@@ -1418,6 +1420,7 @@ $('#exportMixConfirm').addEventListener('click',saveMix);
 $('#exportStemsConfirm').addEventListener('click',saveStems);
 $('#saveProject').addEventListener('click', () => saveProject());
 $('#savedSets').addEventListener('click',()=>{$('#sessionsDialog').showModal(); listSessions();});
+$('#savedSetsStart').addEventListener('click',()=>{$('#sessionsDialog').showModal(); listSessions();});
 $('#storeSession').addEventListener('click',storeCurrentSession);
 $('#undoBtn').addEventListener('click',()=>travel(past,future));
 $('#redoBtn').addEventListener('click',()=>travel(future,past));
