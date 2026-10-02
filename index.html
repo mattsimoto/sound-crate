@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="version" content="1.2.0">
+<meta name="version" content="1.3.0">
 <title>Sound Crate</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -137,6 +137,7 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
       <button class="btn big sun" id="demoBtn">Try the demo sounds</button>
       <button class="btn big" id="openProjectStart">Open project</button>
       <button class="btn big" id="savedSetsStart">Saved sessions</button>
+      <button class="btn big tomato" id="recordStart">Record a sound</button>
     </div>
     <input class="vh" type="file" id="folderIn" webkitdirectory multiple>
     <input class="vh" type="file" id="filesIn" multiple accept="audio/*,.wav,.aif,.aiff,.mp3,.m4a,.flac,.ogg,.caf">
@@ -180,6 +181,7 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
     <button class="btn ghost" id="hypeBtn" aria-pressed="false">Hype</button>
     <button class="btn" id="addSlot">Add slot</button>
     <button class="btn ghost" id="addSounds">Add sounds</button>
+    <button class="btn tomato" id="recordSound">Record a sound</button>
   </header>
 
   <main class="grid" id="crate"></main>
@@ -198,6 +200,33 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
 </div>
 
 <div class="toast" id="toast" role="status"></div>
+<dialog id="recordDialog">
+  <h2>Record a sound</h2>
+  <p>Use your laptop microphone or plug in a USB microphone. Recordings stay on this computer.</p>
+  <p><label for="micInput">Microphone</label> <select id="micInput"><option value="">System default microphone</option></select>
+  <button class="btn" id="refreshMics">Refresh</button></p>
+  <button class="btn" id="enableMic">Enable microphone</button>
+  <p><label for="micLevel">Input level</label> <meter id="micLevel" min="0" max="1" value="0" style="width:180px"></meter> <span id="micLevelText">Microphone off</span></p>
+  <p id="recordStatus" role="status">Choose a microphone, then press Record.</p>
+  <p><output id="recordTime" aria-label="Recording duration">0:00</output> / 2:00 maximum</p>
+  <button class="btn tomato" id="beginRecord">● Record</button>
+  <button class="btn" id="endRecord" disabled>■ Stop</button>
+  <div id="recordResult" hidden>
+    <p><audio id="recordPreview" controls style="max-width:100%"></audio></p>
+    <p><label for="recordName">Sound name</label> <input id="recordName" maxlength="80" placeholder="My new sound"></p>
+    <p><label for="recordRole">Sound type</label> <select id="recordRole">
+      <option value="auto">Guess for me</option><option value="drums">Drums / hits</option><option value="bass">Bass</option>
+      <option value="chords">Chords</option><option value="melody">Melody</option><option value="vocal">Voice</option>
+      <option value="texture">Texture / effects</option>
+    </select></p>
+    <p><label for="recordTarget">Add to</label> <select id="recordTarget"><option value="">Sound collection only</option></select></p>
+    <button class="btn sun" id="addRecording">Add sound</button>
+    <button class="btn" id="downloadRecording">Save original WAV</button>
+    <button class="btn" id="redoRecording">Record again</button>
+  </div>
+  <p class="tip">Playback stops while recording. Short hits repeat on the beat when fitted into a mix. Save the original WAV to keep it outside a project.</p>
+  <button class="btn ghost" id="closeRecording">Close</button>
+</dialog>
 <dialog id="sessionsDialog">
   <h2>Saved sessions</h2>
   <p>Sessions saved here stay in this browser on this computer. Save a project file as a portable backup.</p>
@@ -234,6 +263,7 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
     <li><b>Loop</b> is how long the pattern is before it repeats.</li>
   </ul>
   <h3>Shortcuts</h3>
+  <p><b>Record a sound</b> lets you choose a laptop or USB microphone, record a take, preview it, and add it to a slot or the collection. Use <b>Save original WAV</b> to keep the raw recording.</p>
   <p><kbd>Space</kbd> play or stop &nbsp; <kbd>R</kbd> shuffle everything</p>
   <h3>Using your loops in GarageBand</h3>
   <p><b>Save project</b> saves your chosen sounds, exact loops, and settings as a file. <b>Saved sessions</b> keeps named mixes on this computer. Use <b>Open project</b> to load a file. Load the original folders for their full collection.</p>
@@ -1002,6 +1032,190 @@ async function saveStems(){
   }catch(err){toast('Could not export stems. Try again.',6000);}
 }
 
+/* =================== microphone recording =================== */
+const mic={token:0,phase:'idle',stream:null,source:null,analyser:null,silent:null,recorder:null,
+  chunks:[],timer:null,frame:null,started:0,buffer:null,wav:null,url:null,clipped:false};
+function recordStatus(message){$('#recordStatus').textContent=message;}
+function releaseMic(){
+  clearInterval(mic.timer); mic.timer=null;
+  if(mic.frame!==null) cancelAnimationFrame(mic.frame); mic.frame=null;
+  [mic.source,mic.analyser,mic.silent].forEach(node=>{try{node?.disconnect();}catch{}});
+  mic.source=mic.analyser=mic.silent=null;
+  mic.stream?.getTracks().forEach(track=>track.stop()); mic.stream=null;
+  $('#micLevel').value=0; $('#micLevelText').textContent='Microphone off';
+}
+function clearRecording(){
+  $('#recordPreview').pause(); $('#recordPreview').removeAttribute('src');
+  if(mic.url) URL.revokeObjectURL(mic.url);
+  mic.buffer=mic.wav=mic.url=null; $('#recordResult').hidden=true;
+}
+function recordButtons(){
+  const active=['requesting','recording','processing'].includes(mic.phase);
+  $('#beginRecord').disabled=active; $('#enableMic').disabled=active;
+  $('#endRecord').disabled=mic.phase!=='recording';
+  $('#micInput').disabled=active; $('#refreshMics').disabled=active;
+  $('#addRecording').disabled=!mic.buffer || active;
+}
+function micError(error){
+  if(error.name==='NotAllowedError' || error.name==='SecurityError')
+    return 'Microphone access was blocked. Allow it in your browser/site settings or macOS System Settings → Privacy & Security → Microphone. Restart the desktop app after changing permission.';
+  if(error.name==='NotFoundError' || error.name==='OverconstrainedError')
+    return 'That microphone is unavailable. Connect your USB mic, press Refresh, and choose it again.';
+  if(error.name==='NotReadableError') return 'The microphone could not start. Check its connection and whether another app is using it.';
+  return 'Could not record from this microphone. Try another input or restart the app.';
+}
+async function refreshMicInputs(){
+  if(!navigator.mediaDevices?.enumerateDevices) return;
+  const selected=$('#micInput').value, inputs=(await navigator.mediaDevices.enumerateDevices()).filter(device=>device.kind==='audioinput');
+  const select=$('#micInput'); select.replaceChildren();
+  const defaultOption=document.createElement('option'); defaultOption.value=''; defaultOption.textContent='System default microphone'; select.appendChild(defaultOption);
+  inputs.forEach((device,i)=>{
+    if(!device.deviceId) return;
+    const option=document.createElement('option'); option.value=device.deviceId;
+    option.textContent=device.label || 'Microphone '+(i+1)+' (enable microphone to see names)'; select.appendChild(option);
+  });
+  select.value=inputs.some(device=>device.deviceId===selected)?selected:'';
+}
+function meterMic(){
+  if(!mic.analyser) return;
+  const samples=new Float32Array(mic.analyser.fftSize);
+  function tick(){
+    if(!mic.analyser) return;
+    mic.analyser.getFloatTimeDomainData(samples);
+    let peak=0; for(const value of samples) peak=Math.max(peak,Math.abs(value));
+    if(peak>0.95) mic.clipped=true;
+    $('#micLevel').value=peak;
+    $('#micLevelText').textContent=peak>0.95?'Too loud — move back':peak<0.005?'Very quiet': 'Input ready';
+    mic.frame=requestAnimationFrame(tick);
+  }
+  tick();
+}
+async function enableMicrophone(){
+  const token=++mic.token; mic.phase='requesting'; recordButtons(); recordStatus('Waiting for microphone permission…');
+  releaseMic();
+  try{
+    if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw new Error('unsupported');
+    if(window.soundCrateDesktop?.microphonePermission && !await window.soundCrateDesktop.microphonePermission()){
+      const error=new Error('permission denied'); error.name='NotAllowedError'; throw error;
+    }
+    if(token!==mic.token || !$('#recordDialog').open) return false;
+    const deviceId=$('#micInput').value;
+    const stream=await navigator.mediaDevices.getUserMedia({video:false,audio:{
+      ...(deviceId?{deviceId:{exact:deviceId}}:{}),echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    if(token!==mic.token || !$('#recordDialog').open){stream.getTracks().forEach(track=>track.stop());return false;}
+    mic.stream=stream; audio();
+    mic.source=ctx.createMediaStreamSource(stream); mic.analyser=ctx.createAnalyser(); mic.analyser.fftSize=256;
+    mic.silent=ctx.createGain(); mic.silent.gain.value=0;
+    mic.source.connect(mic.analyser); mic.analyser.connect(mic.silent); mic.silent.connect(ctx.destination);
+    stream.getAudioTracks().forEach(track=>track.addEventListener('ended',()=>{
+      if(mic.phase==='recording') stopRecording();
+      else if(mic.stream===stream){releaseMic();mic.phase='idle';recordButtons();recordStatus('Microphone disconnected. Refresh the inputs to reconnect.');}
+    }));
+    await refreshMicInputs();
+    if(token!==mic.token) return false;
+    if(mic.stream!==stream){const error=new Error('disconnected');error.name='NotReadableError';throw error;}
+    mic.phase='ready'; recordButtons(); meterMic(); recordStatus('Microphone ready. Press Record when you are ready.');
+    return true;
+  }catch(error){
+    if(token!==mic.token) return false;
+    releaseMic(); mic.phase='idle'; recordButtons();
+    recordStatus(error.message==='unsupported'?'Recording is unavailable here. Open the HTTPS Sound Crate site in Safari/Chrome or use the desktop app.':micError(error));
+    return false;
+  }
+}
+async function beginRecording(){
+  if(['requesting','recording','processing'].includes(mic.phase)) return;
+  stop(); $('#recordPreview').pause();
+  if(!mic.stream && !await enableMicrophone()) return;
+  const token=mic.token;
+  clearRecording(); mic.chunks=[]; mic.clipped=false;
+  const mime=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].find(type=>MediaRecorder.isTypeSupported?.(type));
+  try{
+    const recorder=new MediaRecorder(mic.stream,mime?{mimeType:mime}:{});
+    mic.recorder=recorder;
+    recorder.ondataavailable=event=>{if(token===mic.token && event.data.size) mic.chunks.push(event.data);};
+    recorder.onerror=()=>{mic.token++;releaseMic();mic.phase='idle';recordButtons();recordStatus('Recording stopped unexpectedly. Please try again.');};
+    recorder.onstop=async()=>{
+      if(token!==mic.token) return;
+      mic.phase='processing'; releaseMic(); recordButtons(); recordStatus('Preparing your recording…');
+      try{
+        const encoded=new Blob(mic.chunks,{type:recorder.mimeType});
+        let buffer=await audio().decodeAudioData(await encoded.arrayBuffer());
+        if(token!==mic.token || !$('#recordDialog').open) return;
+        if(buffer.duration<0.1) throw new Error('short');
+        if(buffer.numberOfChannels>2){
+          const stereo=ctx.createBuffer(2,buffer.length,buffer.sampleRate);
+          for(let c=0;c<2;c++) stereo.copyToChannel(buffer.getChannelData(c),c);
+          buffer=stereo;
+        }
+        mic.buffer=buffer; mic.wav=wavBlob(buffer); mic.url=URL.createObjectURL(mic.wav);
+        $('#recordPreview').src=mic.url; $('#recordResult').hidden=false;
+        mic.phase='recorded'; recordButtons();
+        recordStatus('Recorded '+buffer.duration.toFixed(1)+' seconds.'+(mic.clipped?' Some input was very loud; record again farther from the mic if it sounds distorted.':' Preview it, then add it to your sounds.'));
+      }catch(error){
+        if(token!==mic.token) return;
+        mic.phase='idle'; recordButtons(); recordStatus(error.message==='short'?'That recording was too short. Try at least a quick tap or a few seconds of sound.':'Could not read the recording. Please record again.');
+      }finally{if(token===mic.token){mic.chunks=[];mic.recorder=null;}}
+    };
+    recorder.start(250); mic.phase='recording'; mic.started=Date.now(); recordButtons(); recordStatus('Recording…');
+    $('#recordTime').textContent='0:00';
+    mic.timer=setInterval(()=>{
+      const seconds=Math.floor((Date.now()-mic.started)/1000);
+      $('#recordTime').textContent=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+      if(seconds>=120) stopRecording();
+    },250);
+  }catch(error){releaseMic();mic.phase='idle';recordButtons();recordStatus(micError(error));}
+}
+function stopRecording(){
+  if(mic.recorder?.state==='recording'){
+    mic.phase='processing'; clearInterval(mic.timer); mic.timer=null;
+    recordButtons(); recordStatus('Finishing recording…'); mic.recorder.stop();
+  }
+}
+function cancelRecording(){
+  mic.token++;
+  if(mic.recorder?.state==='recording') mic.recorder.stop();
+  mic.recorder=null; mic.chunks=[]; releaseMic(); clearRecording(); mic.phase='idle';recordButtons();
+}
+async function showRecorder(){
+  $('#recordDialog').showModal(); $('#recordTime').textContent='0:00';
+  $('#recordName').value='Recording '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  $('#recordRole').value='auto'; recordStatus('Choose a microphone, then press Record.'); recordButtons();
+  const select=$('#recordTarget'); select.replaceChildren();
+  const collection=document.createElement('option');collection.value='';collection.textContent='Sound collection only';select.appendChild(collection);
+  slots.forEach(s=>{const option=document.createElement('option');option.value=s.uid;option.textContent=s.title+(s.lock?' (locked)':'');option.disabled=s.lock;select.appendChild(option);});
+  select.value=(slots.find(s=>!s.lock && !s.item) || slots.find(s=>!s.lock))?.uid || '';
+  try{await refreshMicInputs();}catch(error){recordStatus('Connect your microphone, then press Enable microphone.');}
+}
+function analyzeRecording(buffer,name,role){
+  let peak=0;
+  for(let c=0;c<buffer.numberOfChannels;c++) for(const value of buffer.getChannelData(c)) peak=Math.max(peak,Math.abs(value));
+  if(peak<0.005) return null;
+  const analysis=buffer.duration>=1.5?analyze(buffer,name):{ok:false};
+  const result=analysis.ok?analysis:{ok:true,bpm:state.bpm,tonic:state.tonic,minor:state.minor,pitched:false,
+    role:'drums',firstOnset:0,duration:buffer.duration};
+  if(role!=='auto'){
+    result.role=role;
+    if(['drums','texture','vocal'].includes(role)) result.pitched=false;
+  }
+  return result;
+}
+async function addRecordedSound(){
+  if(!mic.buffer || ['requesting','recording','processing'].includes(mic.phase)) return;
+  if(state.busy || slots.some(s=>s.el.classList.contains('loading'))) return recordStatus('Wait for your mix to finish fitting, then add this sound.');
+  const name=$('#recordName').value.trim() || 'My recording', buffer=mic.buffer;
+  const analysis=analyzeRecording(buffer,name,$('#recordRole').value);
+  if(!analysis) return recordStatus('That recording is silent or very quiet. Check the input meter and record again.');
+  audio(); remember();
+  const item={id:'recording_'+crypto.randomUUID(),name,buf:buffer,a:analysis,folder:'Recordings'};
+  state.ready.push(item); state.total++;state.checked++;state.started=true;
+  const target=slots.find(s=>s.uid===$('#recordTarget').value);
+  if(target && !target.lock){target.item=item;target.part=0;await renderSlot(target);}
+  openCrate();slots.forEach(updateSlotUI);updateStatus();updateButtons();
+  $('#recordDialog').close();
+  toast('Added '+name+'. Choose it from the Recordings folder or save your project.');
+}
+
 /* =================== arranging and history =================== */
 function captureMix(){
   return {settings:{bpm:state.bpm,tonic:state.tonic,minor:state.minor,bars:state.bars,safety:state.safety,hype:state.hype},
@@ -1421,6 +1635,23 @@ $('#exportStemsConfirm').addEventListener('click',saveStems);
 $('#saveProject').addEventListener('click', () => saveProject());
 $('#savedSets').addEventListener('click',()=>{$('#sessionsDialog').showModal(); listSessions();});
 $('#savedSetsStart').addEventListener('click',()=>{$('#sessionsDialog').showModal(); listSessions();});
+['recordStart','recordSound'].forEach(id=>$('#'+id).addEventListener('click',showRecorder));
+$('#enableMic').addEventListener('click',enableMicrophone);
+$('#beginRecord').addEventListener('click',beginRecording);
+$('#endRecord').addEventListener('click',stopRecording);
+$('#refreshMics').addEventListener('click',()=>refreshMicInputs().catch(()=>recordStatus('Could not list microphones. Check the USB connection and try again.')));
+$('#micInput').addEventListener('change',()=>{releaseMic();mic.phase='idle';recordButtons();recordStatus('Input changed. Press Enable microphone or Record to use it.');});
+$('#addRecording').addEventListener('click',addRecordedSound);
+$('#downloadRecording').addEventListener('click',()=>{if(mic.wav) download(mic.wav,safeName($('#recordName').value || 'recording')+'.wav');});
+$('#redoRecording').addEventListener('click',()=>{clearRecording();mic.phase='idle';recordButtons();beginRecording();});
+$('#closeRecording').addEventListener('click',()=>$('#recordDialog').close());
+$('#recordDialog').addEventListener('cancel',cancelRecording);
+$('#recordDialog').addEventListener('close',cancelRecording);
+window.addEventListener('pagehide',cancelRecording);
+if(navigator.mediaDevices?.addEventListener) navigator.mediaDevices.addEventListener('devicechange',()=>{
+  if($('#recordDialog').open && !['requesting','recording','processing'].includes(mic.phase))
+    refreshMicInputs().catch(()=>{});
+});
 $('#storeSession').addEventListener('click',storeCurrentSession);
 $('#undoBtn').addEventListener('click',()=>travel(past,future));
 $('#redoBtn').addEventListener('click',()=>travel(future,past));

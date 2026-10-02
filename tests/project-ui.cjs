@@ -18,16 +18,44 @@ class AudioContextMock{
   createBuffer(channels,length,sampleRate){return new AudioBufferMock({numberOfChannels:channels,length,sampleRate});}
   createGain(){return node();}createBiquadFilter(){return node();}createDynamicsCompressor(){return node();}
   createStereoPanner(){return node();}createBufferSource(){return node();}createOscillator(){return node();}
+  createMediaStreamSource(){return node();}
+  createAnalyser(){return {...node(),fftSize:256,getFloatTimeDomainData:array=>array.fill(0.2)};}
 }
 class OfflineMock extends AudioContextMock{
   constructor(channels,length,sampleRate){super();this.result=this.createBuffer(channels,length,sampleRate);}
   async startRendering(){return this.result;}
 }
 async function run(){
-  const errors=[], html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  const errors=[],micRequests=[],tracks=[], html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  let denyMic=false,pendingMic=null;
   const dom=new JSDOM(html,{url:'https://sound-crate.test',runScripts:'dangerously',beforeParse(w){
     w.AudioContext=AudioContextMock;w.OfflineAudioContext=OfflineMock;w.AudioBuffer=AudioBufferMock;
     w.Blob=Blob;w.indexedDB=indexedDB;w.requestAnimationFrame=()=>0;
+    w.cancelAnimationFrame=()=>{};
+    w.HTMLMediaElement.prototype.pause=function(){};
+    Object.defineProperty(w.navigator,'mediaDevices',{value:{
+      enumerateDevices:async()=>[
+        {kind:'audioinput',deviceId:'laptop',label:'Laptop mic'},
+        {kind:'audioinput',deviceId:'usb',label:'USB mic'},
+        {kind:'videoinput',deviceId:'camera',label:'Camera'}
+      ],
+      addEventListener(){},
+      async getUserMedia(constraints){
+        micRequests.push(constraints);
+        if(denyMic){const error=new Error('denied');error.name='NotAllowedError';throw error;}
+        const track=new w.EventTarget();track.stopped=false;track.stop=()=>{track.stopped=true;};
+        tracks.push(track);
+        const stream={getTracks:()=>[track],getAudioTracks:()=>[track]};
+        if(pendingMic) return new Promise(resolve=>pendingMic.resolve=()=>resolve(stream));
+        return stream;
+      }
+    }});
+    w.MediaRecorder=class{
+      static isTypeSupported(type){return type==='audio/webm;codecs=opus';}
+      constructor(stream,options){this.stream=stream;this.mimeType=options.mimeType;this.state='inactive';}
+      start(){this.state='recording';}
+      stop(){this.state='inactive';this.ondataavailable?.({data:new Blob(['encoded audio'])});this.onstop?.();}
+    };
     w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};
     w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
     w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
@@ -97,8 +125,47 @@ async function run(){
     assert.equal(header.getUint32(40,true),76800*4);
     assert.equal(bytes.byteLength,44+76800*4);
   }
+  // Recording uses the explicitly selected USB device and preserves short hits.
+  await w.showRecorder();assert.equal(micRequests.length,0);
+  assert.equal(w.document.querySelectorAll('#micInput option').length,3);
+  w.document.querySelector('#micInput').value='usb';
+  evalApp(`ctx.decodeAudioData=async()=>{
+    const buffer=ctx.createBuffer(1,1600,8000);buffer.getChannelData(0).fill(0.2);return buffer;
+  }`);
+  await w.beginRecording();
+  assert.equal(micRequests[0].audio.deviceId.exact,'usb');
+  assert.equal(micRequests[0].video,false);
+  assert.equal(evalApp('mic.phase'),'recording');
+  w.stopRecording();
+  for(let i=0;i<20 && evalApp('mic.phase')!=='recorded';i++) await new Promise(resolve=>setTimeout(resolve,5));
+  assert.equal(evalApp('mic.phase'),'recorded');assert.equal(tracks[0].stopped,true);
+  w.document.querySelector('#recordName').value='USB clap';
+  w.document.querySelector('#recordRole').value='drums';
+  await w.addRecordedSound();
+  assert.equal(evalApp('state.ready[state.ready.length-1].name'),'USB clap');
+  assert.equal(evalApp('state.ready[state.ready.length-1].buf.duration'),0.2);
+  assert.equal(evalApp('state.ready[state.ready.length-1].folder'),'Recordings');
+  assert.equal(await w.openProject(await evalApp('saveProject(false)')),true);
+  assert.equal(evalApp('state.ready.some(it=>it.name==="USB clap")'),true);
+  // Denials are actionable and closing an unanswered prompt releases its eventual stream.
+  denyMic=true;await w.showRecorder();await w.beginRecording();
+  assert.equal(evalApp('mic.phase'),'idle');assert.match(w.document.querySelector('#recordStatus').textContent,/blocked/);
+  w.document.querySelector('#recordDialog').close();
+  denyMic=false;pendingMic={};await w.showRecorder();
+  const pending=w.beginRecording();
+  for(let i=0;i<10 && !pendingMic.resolve;i++) await Promise.resolve();
+  w.document.querySelector('#recordDialog').close();pendingMic.resolve();await pending;
+  assert.equal(tracks[tracks.length-1].stopped,true);
+  assert.equal(evalApp('mic.phase'),'idle');
+  pendingMic=null;
+  // Unexpected device removal finishes a take and releases the microphone.
+  await w.showRecorder();await w.beginRecording();
+  tracks[tracks.length-1].dispatchEvent(new w.Event('ended'));
+  for(let i=0;i<20 && evalApp('mic.phase')!=='recorded';i++) await new Promise(resolve=>setTimeout(resolve,5));
+  assert.equal(evalApp('mic.phase'),'recorded');
+  w.document.querySelector('#recordDialog').close();
   assert.deepEqual(errors,[]);
   dom.window.close();
-  console.log('PASS: UI initialization, project v1/v2 reopening, invalid-file isolation, dynamic slots, undo/redo, adjustments, named session storage, aligned WAV exports');
+  console.log('PASS: UI, project/session restoration, history, adjustments, aligned exports, USB input selection, short-hit recording, permission denial, cancelled permission cleanup, disconnected microphone');
 }
 run().catch(err=>{console.error(err);process.exitCode=1;});

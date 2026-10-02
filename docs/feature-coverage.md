@@ -33,6 +33,9 @@ Reviewed the supplied 44.7-second Upcycle explainer, including the slot-adjustme
 
 ## Practical limits and validation
 
+- Microphone recording is now available from the start screen and mixer, with laptop/USB input selection, level meter, two-minute takes, preview, raw WAV downloads, and insertion into a slot or the collection. Short recorded hits are supported even though short imported files are normally skipped.
+- Recorder regression checks cover USB device constraints, denied permissions, cancelling an unanswered prompt, disconnected devices, one-shot fitting, and project persistence. The Mac build also runs a real Electron/MediaRecorder smoke test using a synthetic microphone and verifies the microphone usage description in both app bundles. Actual hardware capture requires a laptop/USB mic test on the user's Mac.
+
 - Browser-only OS dragging is not reliable across DAWs. In the web app, export WAVs and drag them from Finder. The desktop implementation prepares real local WAV files and calls Electron's native drag API.
 - Native dragging uses one fitted loop per occupied slot, without its mixer volume, pan, or gain. For longer files or mixer settings, use Export stems.
 - Native dragged WAVs stay in the desktop app's user-data DAW Stems folder after exit so DAWs that reference files do not lose them. Each prepared revision has its own path.

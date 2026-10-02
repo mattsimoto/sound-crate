@@ -1,6 +1,6 @@
 {
   "name": "sound-crate",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Student-friendly sound mixing with portable sessions and native DAW dragging",
   "author": "Matthew Russell",
   "private": true,
@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node tests/regression.cjs && node tests/desktop.cjs && node tests/project-ui.cjs",
+    "test:recording": "electron tests/recording-smoke.cjs",
     "dist:mac": "electron-builder --mac --arm64 --x64 --publish never"
   },
   "devDependencies": {
@@ -23,7 +24,10 @@
     "mac": {
       "target": ["dmg", "zip"],
       "category": "public.app-category.music",
-      "identity": null
+      "identity": null,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Sound Crate records sounds from your laptop or USB microphone to add to your mixes."
+      }
     }
   }
 }

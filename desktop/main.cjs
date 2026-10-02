@@ -1,4 +1,4 @@
-const {app,BrowserWindow,ipcMain,nativeImage}=require('electron');
+const {app,BrowserWindow,ipcMain,nativeImage,systemPreferences}=require('electron');
 const path=require('node:path'),fs=require('node:fs'),{pathToFileURL}=require('node:url');
 const {validateStem,writeStem}=require('./stem-files.cjs');
 let win,stemDirectory;
@@ -9,9 +9,21 @@ function createWindow(){
   win=new BrowserWindow({width:1280,height:900,title:'Sound Crate',
     webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
+  win.webContents.session.setPermissionCheckHandler((contents,permission,origin,details)=>{
+    return contents===win.webContents && contents.getURL()===pageURL &&
+      permission==='media' && details.mediaType==='audio';
+  });
+  win.webContents.session.setPermissionRequestHandler((contents,permission,callback,details)=>{
+    const audioOnly=permission==='media' && details.mediaTypes?.length>0 && details.mediaTypes.every(type=>type==='audio');
+    callback(contents===win.webContents && contents.getURL()===pageURL && audioOnly);
+  });
   win.webContents.on('will-navigate',(event,url)=>{if(url!==pageURL) event.preventDefault();});
   win.loadFile(page);
 }
+ipcMain.handle('microphone-permission',async event=>{
+  if(!trusted(event)) return false;
+  return process.platform==='darwin'?systemPreferences.askForMediaAccess('microphone'):true;
+});
 ipcMain.handle('prepare-stem',(event,value)=>{
   if(!trusted(event)) throw new Error('Invalid sender');
   validateStem(value);

@@ -61,9 +61,18 @@ Inspired by [Upcycle](https://arialabs.io/upcycle) by Aria Labs. If you make mus
 
 ## Version history
 
+- **1.3.0** — laptop/USB microphone recording, input selection and meter, take preview, short-hit support, raw WAV saving, and Mac microphone permissions
 - **1.2.0** — named saved sessions, 1–12 configurable slots, source-folder selection, favorites, slice rerolls, safe/wild selection, slot adjustments, history, compact view, Hype EQ, aligned exports, and native Mac drag support
 - **1.1.0** — reliable folder switching, complete slot reset, and portable Save/Open Project files
 - **1.0.0** — first version
+
+## Record from a laptop or USB microphone
+
+Click **Record a sound** on the start screen or mixer. Plug in a USB microphone if needed, choose it from the **Microphone** menu, then click **Enable microphone** to allow access and check the input meter. If device names are hidden, enable microphone access first; use **Refresh** after connecting a new input.
+
+Click **Record**, make your sound, then **Stop**. Preview the take, name it, choose its type and destination slot, and click **Add sound**. Recordings appear in the **Recordings** source folder and can be chosen for other slots. Short hits such as claps or taps are supported and repeat on the beat when fitted. Takes are limited to two minutes. Playback pauses for recording; the input is not sent to the speakers.
+
+**Save original WAV** keeps a separate copy of the raw take. Selected recordings also travel with saved sessions and portable project files. The imported sound collection itself is temporary, so download originals you want to keep. Recording works on the HTTPS website and in the desktop app. macOS/browser microphone permissions must be allowed. If macOS permission was denied, enable it in System Settings → Privacy & Security → Microphone and restart the desktop app.
 
 ## New mixer controls
 
@@ -91,4 +100,3 @@ npm run dist:mac
 The **Build Sound Crate for Mac** GitHub Actions workflow also creates DMG/ZIP artifacts after code changes. Download Sound-Crate-Mac from a successful run's Artifacts section. These builds are unsigned and are not notarized; macOS may block first launch. Signing requires the owner's Apple Developer credentials.
 
 See [explainer video feature coverage](docs/feature-coverage.md) for the control-by-control comparison and validation limits.
-
