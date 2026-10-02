@@ -1,6 +1,6 @@
 # Sound Crate
 
-A sample-flipping music toy for the Mac, made for students age 10 and up.
+A sample-flipping music app for a Chrome browser.
 
 Point it at a folder of sounds you forgot you had. Sound Crate listens to every file, works out its speed and key, then stretches and tunes six of them so they play together as a loop. Keep shuffling until something clicks.
 
