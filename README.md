@@ -1,6 +1,6 @@
 # Sound Crate
 
-A sample-flipping music app for a Chrome browser.
+A student-friendly sample-flipping music app for Mac and the web.
 
 Point it at a folder of sounds you forgot you had. Sound Crate listens to every file, works out its speed and key, then stretches and tunes six of them so they play together as a loop. Keep shuffling until something clicks.
 
@@ -23,13 +23,13 @@ Your sounds are never uploaded anywhere. Everything happens inside the browser o
 - Each slot has New sound, Lock, Mute, Solo, volume and left-or-right
 - Change the speed (70–160 bpm), the key, and the loop length (1, 2 or 4 bars)
 - Save the mix as a WAV file, or save each sound on its own
-- In Chrome, drag a slot's Save tab straight into GarageBand
+- In the desktop app, drag individual or all fitted stem WAVs into a DAW
 
 Shortcuts: **Space** plays or stops, **R** shuffles everything.
 
 ## Save a project and continue later
 
-Click **Save project** to download a `.soundcrate` file. It includes the six chosen source sounds, the exact fitted loops, tempo, key, loop length, locks, mute/solo states, volume, and pan. Click **Open project** on either screen to restore it, then press Play. The original sound folder is not needed.
+Click **Save project** to download a `.soundcrate` file. It includes the chosen source sounds, the exact fitted loops, tempo, key, loop length, locks, mute/solo states, volume, and pan. Click **Open project** on either screen to restore it, then press Play. The original sound folder is not needed.
 
 Projects include only the chosen sounds, so shuffle draws from those sounds after reopening. Load the original folder to explore its full collection. WAV exports are separate listening/GarageBand files and cannot restore project settings. Keep the project file somewhere you can find it; there is no automatic save. Maximum project size is 200 MB.
 
@@ -37,7 +37,7 @@ Starting a new folder resets slot controls to their defaults while keeping your 
 
 ## Development checks
 
-Run `node tests/regression.cjs` to check JavaScript syntax, lossless project audio serialization, malformed audio rejection, control reset, and switching folders while decoding.
+Run `npm ci` then `npm test` for syntax, audio serialization, loading/reset regression checks, native file validation, project v1/v2 compatibility, dynamic-slot restoration, undo/redo, slot adjustments, IndexedDB saved sessions, and aligned WAV export lengths. UI tests simulate the audio graph; listening and native DAW acceptance tests need a Mac.
 
 ## Good to know
 
@@ -61,5 +61,34 @@ Inspired by [Upcycle](https://arialabs.io/upcycle) by Aria Labs. If you make mus
 
 ## Version history
 
+- **1.2.0** — named saved sessions, 1–12 configurable slots, source-folder selection, favorites, slice rerolls, safe/wild selection, slot adjustments, history, compact view, Hype EQ, aligned exports, and native Mac drag support
 - **1.1.0** — reliable folder switching, complete slot reset, and portable Save/Open Project files
 - **1.0.0** — first version
+
+## New mixer controls
+
+Add/remove up to 12 slots and choose each slot's role and source folder. Choose sound searches the imported collection. New slice cycles through bar-aligned sections of the same file. Star favorites to favor them in safe shuffles. Wild → Safe controls how closely selections match roles and tempo. Adjust provides gain, half/double time, octave, a 16-step gate, and a four-bar repeat. Undo/redo stores up to 12 mixer changes. Compact hides secondary controls; Hype adds gentle bass/treble EQ.
+
+Saved sessions keeps named mixes in this browser/app profile using IndexedDB. Clearing app/browser data removes them, so also save a portable project file. Export audio provides a 4/8/16/32-bar mix and equal-length stem WAVs. Dry stems include all occupied slots; mixed stems respect mute/solo and include volume, pan, and gain. Mix export also includes Hype and master compression.
+
+## Mac desktop app and DAW dragging
+
+The desktop app uses Electron native file dragging. Drag an individual slot's Save tab or Drag stems to DAW into GarageBand, Logic, Ableton, or another compatible DAW. Native dragging exports each fitted dry loop; use Export stems for longer files or mixer settings. This implementation still needs acceptance testing in those Mac DAWs.
+
+To run from source on a Mac with Node.js installed:
+
+```sh
+npm ci
+npm start
+```
+
+To build Apple Silicon and Intel installers:
+
+```sh
+npm run dist:mac
+```
+
+The **Build Sound Crate for Mac** GitHub Actions workflow also creates DMG/ZIP artifacts after code changes. Download Sound-Crate-Mac from a successful run's Artifacts section. These builds are unsigned and are not notarized; macOS may block first launch. Signing requires the owner's Apple Developer credentials.
+
+See [explainer video feature coverage](docs/feature-coverage.md) for the control-by-control comparison and validation limits.
+

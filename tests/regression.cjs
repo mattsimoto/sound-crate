@@ -24,6 +24,7 @@ async function run(){
     el:{querySelector:s=>nodes[s]??= {value:null,removeAttribute:noop},classList:{remove:noop}}};
   let revoked;
   Object.assign(context,{stop:noop,state:{session:1,renderToken:2},bpmTimer:null,clearTimeout:noop,
+    past:[],future:[],updateHistoryButtons:noop,
     cache:new Map([['old',{}]]),slots:[slot],setPressed:noop,applyMix:noop,updateSlotUI:noop,updateButtons:noop,
     URL:{revokeObjectURL:u=>revoked=u}});
   vm.runInContext(section('function newSession','function addFiles'),context);
