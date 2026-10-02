@@ -1,13 +1,13 @@
 {
   "name": "sound-crate",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Student-friendly sound mixing with portable sessions and native DAW dragging",
   "author": "Matthew Russell",
   "private": true,
   "main": "desktop/main.cjs",
   "scripts": {
     "start": "electron .",
-    "test": "node tests/regression.cjs && node tests/desktop.cjs && node tests/project-ui.cjs",
+    "test": "node tests/regression.cjs && node tests/desktop.cjs && node tests/project-ui.cjs && node tests/samples.cjs",
     "test:recording": "electron tests/recording-smoke.cjs",
     "dist:mac": "electron-builder --mac --arm64 --x64 --publish never"
   },

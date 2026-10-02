@@ -4,7 +4,7 @@
 
 Sound Crate turns forgotten samples, microphone recordings, and everyday noises into a playable mix. Load a collection, shuffle sounds into the mixer, and fit them to a shared tempo and key. Built for quick experiments, music lessons, and getting an idea into your DAW.
 
-**[Open Sound Crate →](https://mattsimoto.github.io/sound-crate/)** · Web app and Mac desktop app · Current version: **1.5.0**
+**[Open Sound Crate →](https://mattsimoto.github.io/sound-crate/)** · Web app and Mac desktop app · Current version: **1.5.1**
 
 ![Sound Crate's retro record-shop mixer, showing colored slots, waveforms, and simplified controls](docs/sound-crate-readme.jpg)
 
@@ -32,6 +32,18 @@ Your audio is processed locally in your browser or desktop app. Sound Crate does
 | Choose your look | Retro record-shop branding, colored instrument slots, and light/dark modes in **Settings**. |
 
 The main controls stay visible. **Session** handles projects and saved sessions; **Add sound** handles imports and recording; **Mix options** holds loop length and extra mixer controls.
+
+## Built-in sample packs
+
+The demo collection now contains **38 sounds**: 12 music loops, 8 synthetic voice samples, 10 ambient textures, and 8 synthesized brass phrases. **Add sound** lets you add each pack to the current collection without replacing your mix. Adding the same pack again skips sounds already present.
+
+- **Voice:** vowel chops, call-and-response tones, stutters, pulses, choir, hum, whisper rhythm, and vowel conversation. These are synthesized vocal textures, not recordings of a person speaking.
+- **Ambient:** soft rain, wind, surf, birds, insects, vinyl noise, rumble, creek, space drift, and warm air. These are procedurally generated soundscapes.
+- **Brass:** trumpet fanfare, muted trumpet, trombone groove, French horn call, tuba march, section stabs, horn swell, and low ensemble. These are synthesized approximations.
+
+All built-in sounds generate locally and work with fitting, effects, pads, recovery, and exports. Use each pack's source-folder filter in a slot to focus your selections.
+
+For recorded brass, see [additional sample sources](docs/sample-sources.md), then download and use **Add sound → Import files**.
 
 ## Record something
 

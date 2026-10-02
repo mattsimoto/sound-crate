@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="version" content="1.5.0">
+<meta name="version" content="1.5.1">
 <title>Sound Crate</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f39f16%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M3%2014v4M8%209v14M13%203v26M18%207v18M23%2011v10M28%2014v4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1626,6 +1626,14 @@ function kit(oc, out, noise){
       o.connect(f); f.connect(g); g.connect(out); o.start(t); o.stop(t+dur+0.2);
     },
     bell(t, m, v=0.22){ [1,2,3.01].forEach((r,i) => { const o=oc.createOscillator(), g=oc.createGain(); o.type='sine'; o.frequency.value=mtof(m)*r; env(g,t,0.002,v/(i*1.6+1),1.1/(i+1)); o.connect(g); g.connect(out); o.start(t); o.stop(t+1.3); }); },
+    brass(t,dur,m,kind='trumpet',v=.3){
+      const o=oc.createOscillator(),f=oc.createBiquadFilter(),g=oc.createGain();o.type='sawtooth';o.frequency.value=mtof(m);
+      const cutoff={trumpet:3500,muted:1400,trombone:1800,horn:1000,tuba:700}[kind];f.type='lowpass';f.Q.value=kind==='muted'?3:.7;
+      f.frequency.setValueAtTime(cutoff*.3,t);f.frequency.linearRampToValueAtTime(cutoff,t+Math.min(.13,dur*.2));f.frequency.linearRampToValueAtTime(cutoff*.45,t+dur);
+      const attack=kind==='horn'?.12:.025;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+Math.min(attack,dur*.2));g.gain.setValueAtTime(v*.75,t+dur*.75);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+      const vibrato=oc.createOscillator(),depth=oc.createGain();vibrato.frequency.value=5.1;depth.gain.value=7;vibrato.connect(depth);depth.connect(o.detune);
+      o.connect(f);f.connect(g);g.connect(out);o.start(t);vibrato.start(t);o.stop(t+dur+.03);vibrato.stop(t+dur+.03);
+    },
     rain(len){ const n=oc.createBufferSource(); n.buffer=noise; n.loop=true; const f=oc.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1800; f.Q.value=0.7; const g=oc.createGain(); g.gain.value=0.12; n.connect(f); f.connect(g); g.connect(out); n.start(0); n.stop(len); },
   };
 }
@@ -1644,25 +1652,93 @@ const DEMOS = [
   {name:'Demo Texture Rain 100bpm', bpm:100, bars:4, play:(k,T,beat,len)=>{ k.rain(len); for(let i=0;i<28;i++) k.bell(Math.random()*(len-0.3), 84+Math.floor(Math.random()*16), 0.05); }},
   {name:'Demo Bells Twinkle 115bpm Gm', bpm:115, bars:2, play:(k,T)=>{ [[0,67],[3,70],[6,74],[8,72],[12,70],[16,65],[19,67],[22,70],[24,62]].forEach(([s,m])=>k.bell(T(s),m)); }},
 ];
+// Original procedural samples: no external recordings, licenses, or network requests.
+const EXTRA_DEMOS = [
+  ...[['Ah chops','ah',57],['Oh answers','oh',57],['Ee stutters','ee',64],['Oo pulses','oo',57],['Choir swell','choir',57],['Low hum','hum',45],['Whisper rhythm','whisper',57],['Vowel conversation','talk',57]].map(([label,kind,note])=>({name:`Synthetic Voice ${label} 100bpm${kind==='whisper'?'':' Am'}`,bpm:100,bars:4,folder:'Voice pack (synthetic)',kind,note})),
+  ...[['Soft rain','rain'],['Wind in trees','wind'],['Ocean surf','surf'],['Forest birds','forest'],['Night insects','insects'],['Vinyl room','vinyl'],['Distant rumble','rumble'],['Creek water','creek'],['Space drift','space'],['Warm air','air']].map(([label,kind])=>({name:`Ambient Texture ${label} 100bpm`,bpm:100,bars:4,folder:'Ambient pack (synthetic)',kind})),
+];
+const BRASS_DEMOS=[
+ {name:'Synth Brass Trumpet fanfare 100bpm Am',bpm:100,bars:4,folder:'Brass pack (synthetic)',play:(k,T)=>{[[0,69,3],[4,72,3],[8,76,6],[16,72,3],[20,76,3],[24,81,7]].forEach(([s,m,l])=>k.brass(T(s),T(l),m,'trumpet'));}},
+ {name:'Synth Brass Muted trumpet 100bpm Am',bpm:100,bars:4,folder:'Brass pack (synthetic)',play:(k,T)=>{for(let s=0;s<64;s+=6)k.brass(T(s),T(2),[69,72,76,79][Math.floor(s/6)%4],'muted');}},
+ {name:'Synth Brass Trombone groove 100bpm Am',bpm:100,bars:4,folder:'Brass pack (synthetic)',play:(k,T)=>{for(let s=0;s<64;s+=8){k.brass(T(s),T(3),45,'trombone');k.brass(T(s+5),T(2),52,'trombone');}}},
+ {name:'Synth Brass French horn call 100bpm Am',bpm:100,bars:4,folder:'Brass pack (synthetic)',play:(k,T)=>{[[0,57,14],[16,60,14],[32,64,14],[48,57,14]].forEach(([s,m,l])=>k.brass(T(s),T(l),m,'horn'));}},
+ {name:'Synth Brass Tuba march 100bpm Am',bpm:100,bars:4,folder:'Brass pack (synthetic)',play:(k,T)=>{for(let s=0;s<64;s+=8)k.brass(T(s),T(4),s%16?40:33,'tuba');}},
+ {name:'Synth Brass Section stabs 100bpm Am',bpm:100,bars:4,folder:'Brass pack (synthetic)',play:(k,T)=>{for(let s=0;s<64;s+=8)[57,60,64].forEach(m=>k.brass(T(s+2),T(2),m,'trumpet',.16));}},
+ {name:'Synth Brass Horn swell 100bpm Am',bpm:100,bars:4,folder:'Brass pack (synthetic)',play:(k,T)=>{[57,60,64].forEach(m=>k.brass(0,T(62),m,'horn',.13));}},
+ {name:'Synth Brass Low ensemble 100bpm Am',bpm:100,bars:4,folder:'Brass pack (synthetic)',play:(k,T)=>{for(let s=0;s<64;s+=16)[45,48,52].forEach(m=>k.brass(T(s),T(12),m,'trombone',.17));}},
+];
+DEMOS.push(...EXTRA_DEMOS,...BRASS_DEMOS);
+function proceduralSample(d,sr){
+  const length=Math.round(d.bars*4*60/d.bpm*sr), b=audio().createBuffer(2,length,sr);
+  let seed=[...d.kind].reduce((a,c)=>Math.imul(a,31)+c.charCodeAt(0),17)>>>0;
+  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296*2-1;};
+  const vowels={ah:[800,1150,2800],oh:[450,800,2830],ee:[300,2200,3000],oo:[325,700,2530],hum:[250,500,1000]};
+  const voice=!!d.note, base=mtof(d.note||57), beat=60/d.bpm, duration=length/sr;
+  const weights=Object.fromEntries(Object.entries(vowels).map(([kind,formants])=>[kind,Array.from({length:32},(_,i)=>{const h=i+1,f=base*h;return .02/h+formants.reduce((v,formant)=>v+Math.exp(-(((f-formant)/120)**2))/h,0);})]));
+  let low=[0,0],slow=[0,0],phase=0;
+  for(let i=0;i<length;i++){
+    const t=i/sr, step=Math.floor(t/beat*2), local=t%(beat/2), swell=Math.sin(Math.PI*t/duration)**2;
+    const edge=Math.min(1,t/.08,(duration-t)/.08);
+    phase+=2*Math.PI*base*(1+.003*Math.sin(t*31))/sr;
+    for(let c=0;c<2;c++){
+      const n=random();low[c]+=.025*(n-low[c]);slow[c]+=.0015*(n-slow[c]);let v=0;
+      if(voice){
+        const sustained=['choir','hum'].includes(d.kind), gate=sustained?swell:Math.sin(Math.PI*Math.min(1,local/(beat*.42)))**2*(step%8===7?0:1);
+        const kind=d.kind==='talk'?['ah','oh','ee','oo'][step%4]:d.kind==='choir'?'ah':d.kind;
+        const harmonics=weights[kind]||weights.ah;
+        for(let h=1;h<=32;h++){
+          if(base*h<sr*.45)v+=Math.sin(phase*h+c*.012*h)*harmonics[h-1];
+        }
+        if(d.kind==='choir')v+=.12*Math.sin(phase*.5+c*.04)+.09*Math.sin(phase*1.5);
+        if(d.kind==='whisper')v=(n-low[c])*.22;
+        v*=gate*.7;
+      }else{
+        switch(d.kind){
+          case 'rain':v=(n-low[c])*.13+low[c]*.3;break;
+          case 'wind':v=low[c]*(.5+.35*Math.sin(t*.8+c*.1));break;
+          case 'surf':v=low[c]*(.2+.8*Math.sin(Math.PI*t/4)**2)+(n-low[c])*.035;break;
+          case 'forest':{const a=t%2.4;v=low[c]*.1+Math.sin(2*Math.PI*(2200*t+180*Math.sin(t*7)))*.07*Math.exp(-(((a-.5)/.13)**2));break;}
+          case 'insects':v=low[c]*.08+Math.sin(t*2*Math.PI*4200+c*.3)*.035*(.3+.7*Math.sin(t*19)**8);break;
+          case 'vinyl':v=n*.028+(Math.abs(n)>.9994?n*.18:0)+Math.sin(t*2*Math.PI*60)*.016;break;
+          case 'rumble':v=slow[c]*2+Math.sin(t*2*Math.PI*42)*.07*(.6+.4*Math.sin(t*.6));break;
+          case 'creek':v=low[c]*.4+Math.sin(t*2*Math.PI*680+6*Math.sin(t*29))*.025;break;
+          case 'space':v=(Math.sin(t*2*Math.PI*110+c*.12)+Math.sin(t*2*Math.PI*165)+Math.sin(t*2*Math.PI*220.3))*.065*swell+slow[c]*.3;break;
+          case 'air':v=low[c]*.25+Math.sin(t*2*Math.PI*90)*.035;break;
+        }
+      }
+      b.getChannelData(c)[i]=Math.max(-.8,Math.min(.8,v*edge));
+    }
+  }
+  return b;
+}
 async function renderDemo(d, sr){
+  if(d.kind) return proceduralSample(d,sr);
   const beat=60/d.bpm, len=d.bars*4*beat, oc=new OfflineAudioContext(2, Math.round(len*sr), sr);
   const noise=oc.createBuffer(1, sr, sr), nd=noise.getChannelData(0); for(let i=0;i<nd.length;i++) nd[i]=Math.random()*2-1;
   const out=oc.createGain(); out.gain.value=0.7; out.connect(oc.destination);
   d.play(kit(oc, out, noise), s => s*beat/4, beat, len);
   return oc.startRendering();
 }
-async function loadDemo(){
-  audio(); newSession();
-  const ses = state.session;
-  openCrate(); setStatus('Making the demo sounds…');
-  let i=0;
-  for(const d of DEMOS){
-    const b = await renderDemo(d, ctx.sampleRate);
-    if(ses!==state.session) return;
-    state.queue.push({id:`d${ses}_${i++}`, name:d.name, buf:b,folder:'Demo sounds'});
-  }
-  state.total = state.queue.length;
-  analyzeLoop();
+async function loadDemo(pack='all',append=false){
+  if(state.loadingDemo || state.busy || state.analyzing) return toast('Wait for the sounds to finish loading.');
+  audio(); if(!append) newSession();
+  const ses=state.session;
+  const selected=DEMOS.filter(d=>pack==='all'||(pack==='voice'?d.note:pack==='ambient'?d.folder?.startsWith('Ambient'):pack==='brass'?d.folder?.startsWith('Brass'):!d.kind&&!d.folder));
+  const pending=selected.filter(d=>!append||!state.ready.some(it=>it.name===d.name));
+  if(!pending.length) return toast('This sample pack is already in your collection.');
+  state.loadingDemo=true; updateButtons(); openCrate(); setStatus('Making sample pack…');
+  try{
+    let i=0;
+    for(const d of pending){
+      const b=await renderDemo(d,ctx.sampleRate);
+      if(ses!==state.session) return;
+      state.queue.push({id:`d${ses}_${pack}_${Date.now()}_${i++}`,name:d.name,buf:b,folder:d.folder||'Demo music'});
+      await sleep(0);
+    }
+    state.total=state.checked+state.queue.length;
+    await analyzeLoop();
+  }catch(err){toast('Could not make the sample pack. Please try again.',5000);}
+  finally{state.loadingDemo=false;updateStatus();updateButtons();}
 }
 
 /* =================== UI wiring =================== */
@@ -1678,6 +1754,7 @@ function updateStatus(){
 }
 function setBusy(b){ state.busy = b; updateStatus(); updateButtons(); }
 function updateButtons(){
+  document.querySelectorAll('.menu-panel button').forEach(b=>{if(/^(Add demo music|Add voice pack|Add ambient pack|Add brass pack)/.test(b.textContent))b.disabled=!!state.loadingDemo||state.busy||state.analyzing;});
   const exportButton=$('#exportButton');if(exportButton)exportButton.disabled=!slots.some(s=>s.buffer);
   const has = slots.some(s => s.buffer);
   const fitting=state.busy || slots.some(s=>s.el.classList.contains('loading'));
@@ -1893,8 +1970,11 @@ function organizeUI(){
  bar.append(makeMenu('Settings',[theme,$('#helpBtn')]));
  const transport=document.createElement('div');transport.className='transport-row';transport.append($('#playBtn'),speed,key);bar.append(transport);
  const toolbar=document.createElement('nav');toolbar.className='workspace-toolbar';toolbar.setAttribute('aria-label','Music workspace');const tabs=document.createElement('div');tabs.className='workspace-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Workspace');for(const [id,label,panel] of [['mixerTab','Mixer','crate'],['padsTab','Pads','padsPanel']]){const btn=document.createElement('button');btn.id=id;btn.textContent=label;btn.setAttribute('role','tab');btn.setAttribute('aria-controls',panel);btn.onclick=()=>setWorkspace(id==='mixerTab'?'mixer':'pads');btn.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'mixer':e.key==='End'?'pads':id==='mixerTab'?'pads':'mixer';setWorkspace(next);$(next==='mixer'?'#mixerTab':'#padsTab').focus();}};tabs.append(btn);}toolbar.append(tabs,$('#shuffleBtn'),$('#addSlot'),$('#undoBtn'));
- const demo=document.createElement('button');demo.className='btn';demo.textContent='Demo sounds';demo.onclick=()=>{if(state.ready.length&&!confirm('Replace this collection with demo sounds? Save your session first if needed.'))return;loadDemo();};
- const files=document.createElement('button');files.className='btn';files.textContent='Import files';files.onclick=()=>{appendMode=true;$('#filesIn').click();};$('#addSounds').textContent='Import folder';toolbar.append(makeMenu('Add sound',[files,$('#addSounds'),$('#recordSound'),demo]));
+ const demo=document.createElement('button');demo.className='btn';demo.textContent='Add demo music';demo.onclick=()=>loadDemo('music',true);
+ const voicePack=document.createElement('button');voicePack.className='btn';voicePack.textContent='Add voice pack (synthetic)';voicePack.onclick=()=>loadDemo('voice',true);
+ const ambientPack=document.createElement('button');ambientPack.className='btn';ambientPack.textContent='Add ambient pack';ambientPack.onclick=()=>loadDemo('ambient',true);
+ const brassPack=document.createElement('button');brassPack.className='btn';brassPack.textContent='Add brass pack (synthetic)';brassPack.onclick=()=>loadDemo('brass',true);
+ const files=document.createElement('button');files.className='btn';files.textContent='Import files';files.onclick=()=>{appendMode=true;$('#filesIn').click();};$('#addSounds').textContent='Import folder';toolbar.append(makeMenu('Add sound',[files,$('#addSounds'),$('#recordSound'),demo,voicePack,ambientPack,brassPack]));
  toolbar.append(makeMenu('Mix options',[$('.seg'),$('#safeRange').closest('.ctrl'),$('#hypeBtn'),$('#randomKey'),$('#redoBtn'),$('#resetMix'),$('#miniBtn')]));bar.after(toolbar);
  const pads=document.querySelector('.pads-panel');pads.id='padsPanel';pads.setAttribute('role','tabpanel');pads.setAttribute('aria-labelledby','padsTab');$('#crate').setAttribute('role','tabpanel');$('#crate').setAttribute('aria-labelledby','mixerTab');
  $('#shuffleBtn').textContent='Shuffle';$('#shuffleBtn').classList.remove('big');
