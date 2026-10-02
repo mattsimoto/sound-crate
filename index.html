@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="version" content="1.0.0">
+<meta name="version" content="1.1.0">
 <title>Sound Crate</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -127,9 +127,11 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
       <label class="btn big tomato" for="folderIn" tabindex="0">Choose a sound folder</label>
       <label class="btn big" for="filesIn" tabindex="0">Choose sound files</label>
       <button class="btn big sun" id="demoBtn">Try the demo sounds</button>
+      <button class="btn big" id="openProjectStart">Open project</button>
     </div>
     <input class="vh" type="file" id="folderIn" webkitdirectory multiple>
     <input class="vh" type="file" id="filesIn" multiple accept="audio/*,.wav,.aif,.aiff,.mp3,.m4a,.flac,.ogg,.caf">
+    <input class="vh" type="file" id="projectIn" accept=".soundcrate,application/json">
     <p class="tip">You can also drop a folder onto this window. Good places to look: Music, Downloads and GarageBand. Your sounds stay on your Mac.</p>
     <p class="err" id="startErr" hidden></p>
   </div>
@@ -157,6 +159,8 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
       <button data-bars="4" aria-pressed="false">4 bars</button>
     </div>
     <button class="btn ghost" id="helpBtn">How to use</button>
+    <button class="btn ghost" id="openProject">Open project</button>
+    <button class="btn" id="saveProject" disabled>Save project</button>
   </header>
 
   <main class="grid" id="crate"></main>
@@ -194,6 +198,7 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
   <h3>Shortcuts</h3>
   <p><kbd>Space</kbd> play or stop &nbsp; <kbd>R</kbd> shuffle everything</p>
   <h3>Using your loops in GarageBand</h3>
+  <p><b>Save project</b> saves the six chosen sounds, their exact loops, and your settings. Use <b>Open project</b> to continue later. Projects include the chosen sounds only; reopen your original folder for its full selection. WAV exports are for listening or GarageBand.</p>
   <p>In Chrome, drag the <b>Save</b> tab on any sound straight into GarageBand. In Safari, click <b>Save each sound</b>, then drag the files from your Downloads folder into GarageBand.</p>
   <p style="margin-top:18px"><button class="btn" onclick="this.closest('dialog').close()">Got it</button></p>
 </dialog>
@@ -472,9 +477,22 @@ function shuffleArr(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.r
 function newSession(){
   stop();
   state.session++;
-  Object.assign(state, {queue:[], ready:[], total:0, checked:0, skipped:0, started:false});
+  state.renderToken++;
+  clearTimeout(bpmTimer);
+  Object.assign(state, {queue:[], ready:[], total:0, checked:0, skipped:0, started:false, busy:false, loopLen:0});
   cache.clear();
-  slots.forEach(s => { s.gen++; s.item=null; s.buffer=null; s.peaks=null; s.part=null; s.lock=false; setPressed(s,'lock',false); updateSlotUI(s); });
+  slots.forEach(s => {
+    s.gen++; s.item=null; s.buffer=null; s.peaks=null; s.part=null;
+    if(s.stemUrl) URL.revokeObjectURL(s.stemUrl);
+    s.stemUrl=null; s.stemName='';
+    s.lock=false; s.mute=false; s.solo=false; s.vol=0.8; s.panV=0;
+    ['lock','mute','solo'].forEach(act => setPressed(s,act,false));
+    s.el.querySelector('input[id^="v"]').value=0.8;
+    s.el.querySelector('input[id^="p"]').value=0;
+    s.el.querySelector('.save').removeAttribute('href');
+    s.el.classList.remove('loading','silent');
+    applyMix(s); updateSlotUI(s);
+  });
   updateButtons();
 }
 function addFiles(files){
@@ -511,16 +529,22 @@ async function analyzeLoop(){
       if(ses!==state.session) break;
       it.a = analyze(buf, it.name);
       if(it.a.ok) state.ready.push(it); else state.skipped++;
-    }catch(err){ state.skipped++; }
+    }catch(err){ if(ses!==state.session) break; state.skipped++; }
+    if(ses!==state.session) break;
     state.checked++;
     updateStatus();
     if(!state.started && (state.ready.length >= 8 || (!state.queue.length && state.ready.length))){
       state.started = true;
-      await rerollAll(); play();
+      await rerollAll();
+      if(ses===state.session) play();
     }
     await sleep(0);
   }
   state.analyzing = false;
+  if(ses!==state.session){
+    if(state.queue.length) analyzeLoop();
+    return;
+  }
   if(ses===state.session){
     updateStatus();
     if(!state.ready.length) toast('None of those files worked as loops. Try a folder with music loops or longer sounds in it.', 6000);
@@ -603,19 +627,22 @@ async function reroll(s){
 }
 async function rerollAll(){
   if(!state.ready.length) return;
+  const ses = state.session;
   const targets = slots.filter(s => !s.lock || !s.item);
   for(const s of targets){ s.item = pick(s); s.part = null; }
-  for(const s of targets) await renderSlot(s);
+  for(const s of targets){ if(ses!==state.session) return; await renderSlot(s); }
 }
 
 async function renderSlot(s){
   const g = ++s.gen, it = s.item;
   if(!it){ s.buffer=null; s.peaks=null; updateSlotUI(s); return; }
   s.el.classList.add('loading');
+  updateButtons();
   await sleep(16);
   let buf;
   try{ buf = await getBuffer(it, true); }
   catch(err){
+    if(g!==s.gen) return;
     state.ready = state.ready.filter(x => x!==it);
     if(g===s.gen){ s.el.classList.remove('loading'); if(state.ready.length){ s.item=pick(s); return renderSlot(s); } }
     return;
@@ -837,6 +864,118 @@ async function saveStems(){
   if(live.length) toast(`Saved ${live.length} sounds to your Downloads folder`);
 }
 
+/* =================== portable projects =================== */
+function packBuffer(buffer){
+  return {sampleRate:buffer.sampleRate, length:buffer.length,
+    channels:Array.from({length:buffer.numberOfChannels}, (_,c) => {
+      const data=buffer.getChannelData(c), bytes=new Uint8Array(data.length*4), view=new DataView(bytes.buffer);
+      for(let i=0;i<data.length;i++) view.setFloat32(i*4,data[i],true);
+      let binary='';
+      for(let i=0;i<bytes.length;i+=8192) binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
+      return btoa(binary);
+    })};
+}
+function unpackBuffer(value){
+  if(!value || !Number.isInteger(value.sampleRate) || value.sampleRate<8000 || value.sampleRate>192000 ||
+    !Number.isInteger(value.length) || value.length<1 || value.length>value.sampleRate*300 ||
+    !Array.isArray(value.channels) || value.channels.length<1 || value.channels.length>2)
+    throw new Error('Invalid audio in project');
+  const buffer=audio().createBuffer(value.channels.length,value.length,value.sampleRate);
+  value.channels.forEach((encoded,c) => {
+    if(typeof encoded!=='string' || encoded.length!==4*Math.ceil(value.length*4/3)) throw new Error('Invalid audio data');
+    const binary=atob(encoded);
+    if(binary.length!==value.length*4) throw new Error('Invalid audio length');
+    const bytes=Uint8Array.from(binary,x=>x.charCodeAt(0)), view=new DataView(bytes.buffer), data=buffer.getChannelData(c);
+    for(let i=0;i<data.length;i++){
+      const sample=view.getFloat32(i*4,true);
+      if(!Number.isFinite(sample) || Math.abs(sample)>32) throw new Error('Invalid audio sample');
+      data[i]=sample;
+    }
+  });
+  return buffer;
+}
+async function saveProject(){
+  if(state.busy || slots.some(s=>s.el.classList.contains('loading'))) return toast('Wait for the sounds to finish fitting.');
+  const ses=state.session, settings={bpm:state.bpm,tonic:state.tonic,minor:state.minor,bars:state.bars};
+  const snapshot=slots.map(s=>({item:s.item,buffer:s.buffer,part:s.part,semis:s.semis,usedBeats:s.usedBeats,
+    vol:s.vol,panV:s.panV,mute:s.mute,solo:s.solo,lock:s.lock}));
+  const button=$('#saveProject'); button.disabled=true;
+  try{
+    const sounds=[], ids=new Map();
+    for(const s of snapshot){
+      if(!s.item || !s.buffer || ids.has(s.item)) continue;
+      const original=await getBuffer(s.item,true);
+      if(ses!==state.session) return;
+      ids.set(s.item,sounds.length);
+      sounds.push({name:s.item.name,a:s.item.a,audio:packBuffer(original)});
+      await sleep(0);
+    }
+    if(ses!==state.session) return;
+    const project={format:'sound-crate',version:1,settings,sounds,
+      slots:snapshot.map(s=>({...s,item:undefined,buffer:undefined,
+        sound:s.item && s.buffer ? ids.get(s.item) : null, audio:s.buffer ? packBuffer(s.buffer) : null}))};
+    const blob=new Blob([JSON.stringify(project)],{type:'application/json'});
+    if(blob.size>200*1024*1024) return toast('These sounds make a project larger than 200 MB. Try shorter source loops.',6000);
+    download(blob,'sound-crate-project.soundcrate');
+    toast('Project saved. Open it later to continue your mix.');
+  }catch(err){ toast('Could not save this project. Try again.',6000); }
+  finally{ updateButtons(); }
+}
+async function openProject(file){
+  if(file.size>200*1024*1024) return toast('This project is too large (maximum 200 MB).',6000);
+  const ses=state.session;
+  try{
+    const project=JSON.parse(await file.text()), p=project.settings;
+    if(ses!==state.session) return;
+    if(project.format!=='sound-crate' || project.version!==1 || !p ||
+      !Number.isInteger(p.bpm) || p.bpm<70 || p.bpm>160 || !Number.isInteger(p.tonic) || p.tonic<0 || p.tonic>11 ||
+      typeof p.minor!=='boolean' || ![1,2,4].includes(p.bars) ||
+      !Array.isArray(project.sounds) || project.sounds.length>6 || !Array.isArray(project.slots) || project.slots.length!==6)
+      throw new Error('Invalid project');
+    // Validate everything before replacing the current mix.
+    const sounds=project.sounds.map((s,i)=>{
+      const a=s.a;
+      if(typeof s.name!=='string' || !a || !Number.isFinite(a.bpm) || a.bpm<30 || a.bpm>400 ||
+        !Number.isInteger(a.tonic) || a.tonic<0 || a.tonic>11 || typeof a.minor!=='boolean' ||
+        typeof a.pitched!=='boolean' || !Number.isFinite(a.firstOnset) || a.firstOnset<0)
+        throw new Error('Invalid sound');
+      return {id:'project_'+i,name:s.name,a,buf:unpackBuffer(s.audio)};
+    });
+    const restored=project.slots.map(s=>{
+      if(!Number.isFinite(s.vol) || s.vol<0 || s.vol>1 || !Number.isFinite(s.panV) || Math.abs(s.panV)>1 ||
+        ['mute','solo','lock'].some(k=>typeof s[k]!=='boolean') ||
+        (s.part!==null && (!Number.isInteger(s.part) || s.part<0)) ||
+        (s.sound!==null && (!Number.isInteger(s.sound) || !sounds[s.sound])))
+        throw new Error('Invalid slot');
+      const buffer=s.sound===null ? null : unpackBuffer(s.audio);
+      if(buffer && (buffer.numberOfChannels!==2 || Math.abs(buffer.duration-p.bars*4*60/p.bpm)>2/buffer.sampleRate ||
+        !Number.isFinite(s.semis) || !Number.isFinite(s.usedBeats))) throw new Error('Invalid loop');
+      return {...s,buffer};
+    });
+    newSession(); Object.assign(state,p,{ready:sounds,total:sounds.length,checked:sounds.length,started:true});
+    $('#bpmRange').value=p.bpm; $('#bpmOut').textContent=p.bpm;
+    $('#keySel').value=p.tonic+':'+(p.minor?1:0);
+    document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.bars===p.bars));
+    openCrate();
+    restored.forEach((r,i)=>{
+      const s=slots[i];
+      Object.assign(s,{item:r.sound===null?null:sounds[r.sound],buffer:r.buffer,part:r.part,
+        semis:r.semis,usedBeats:r.usedBeats,vol:r.vol,panV:r.panV,mute:r.mute,solo:r.solo,lock:r.lock});
+      ['lock','mute','solo'].forEach(act=>setPressed(s,act,s[act]));
+      s.el.querySelector('input[id^="v"]').value=s.vol;
+      s.el.querySelector('input[id^="p"]').value=s.panV;
+      if(s.buffer){
+        state.loopLen=s.buffer.duration; s.peaks=makePeaks(s.buffer,140);
+        s.stemName=s.role+'-'+safeName(s.item.name)+'-'+state.bpm+'bpm-'+keyShort()+'.wav';
+        s.stemUrl=URL.createObjectURL(wavBlob(s.buffer));
+      }
+      updateSlotUI(s);
+    });
+    slots.forEach(applyMix); updateStatus(); updateButtons();
+    toast('Project opened. Press play to continue.');
+  }catch(err){ toast('Could not open this project. Choose a valid Sound Crate project file.',6000); }
+}
+
 /* =================== demo sounds (made right here, no files needed) =================== */
 const mtof = m => 440*2**((m-69)/12);
 function env(g, t, a, peak, d){ g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+a+d); }
@@ -906,13 +1045,14 @@ function updateStatus(){
   if(state.queue.length) setStatus(`Listening to your sounds: ${state.checked} of ${state.total} checked, ${r} ready to use`);
   else setStatus(`${r} sound${r===1?'':'s'} ready to mix` + (state.skipped ? `, ${state.skipped} skipped (too short, silent or unreadable)` : ''));
 }
-function setBusy(b){ state.busy = b; updateStatus(); }
+function setBusy(b){ state.busy = b; updateStatus(); updateButtons(); }
 function updateButtons(){
   const has = slots.some(s => s.buffer);
   $('#playBtn').disabled = !has;
   $('#shuffleBtn').disabled = !state.ready.length;
   $('#saveMix').disabled = !has;
   $('#saveStems').disabled = !has;
+  $('#saveProject').disabled = !has || state.busy || slots.some(s => s.el.classList.contains('loading'));
   slots.forEach(s => { const rr=s.el.querySelector('.reroll'); rr.disabled = s.lock || !state.ready.length; });
 }
 const PLAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>';
@@ -956,6 +1096,12 @@ $('#playBtn').addEventListener('click', () => state.playing ? stop() : play());
 $('#shuffleBtn').addEventListener('click', () => { audio(); rerollAll(); });
 $('#saveMix').addEventListener('click', saveMix);
 $('#saveStems').addEventListener('click', saveStems);
+$('#saveProject').addEventListener('click', saveProject);
+['openProject','openProjectStart'].forEach(id=>$('#'+id).addEventListener('click',()=>$('#projectIn').click()));
+$('#projectIn').addEventListener('change',e=>{
+  const file=e.target.files[0]; e.target.value='';
+  if(file) openProject(file);
+});
 $('#helpBtn').addEventListener('click', () => $('#help').showModal());
 $('#newFolder').addEventListener('click', () => { newSession(); setStatus(''); document.body.classList.remove('has-crate'); });
 $('#demoBtn').addEventListener('click', loadDemo);
