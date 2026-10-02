@@ -177,6 +177,26 @@ async function run(){
   assert.equal(evalApp('mic.phase'),'recorded');
   w.document.querySelector('#recordDialog').close();
 
+
+  // Independent source correction, pitch and FX survive saving; baked audio is restored exactly.
+  evalApp(`slots[0].octave=0;slots[0].fitting={...defaultFitting(),sourceBpm:110,sourceKey:'off',transpose:3,mode:'stretch'};slots[0].effects={...defaultEffects(),echo:.35,reverb:.2};`);
+  assert.equal(evalApp('effectiveAnalysis(slots[0]).bpm'),110);
+  assert.equal(evalApp('effectiveAnalysis(slots[0]).pitched'),false);
+  await evalApp('renderSlot(slots[0])');
+  assert.equal(evalApp('slots[0].semis'),3);
+  assert.ok(Math.abs(evalApp('slots[0].buffer.duration')-evalApp('(slots[0].repeat4?Math.max(state.bars,4):state.bars)*4*60/state.bpm'))<.001);
+  const fxProject=await evalApp('saveProject(false)');
+  const fxPacked=JSON.parse(await fxProject.text());
+  assert.equal(fxPacked.slots[0].effects.echo,.35);
+  assert.equal(await w.openProject(fxProject),true);
+  assert.equal(evalApp('slots[0].fitting.sourceBpm'),110);
+  assert.equal(evalApp('slots[0].effects.reverb'),.2);
+  assert.equal(JSON.parse(await (await evalApp('saveProject(false)')).text()).slots[0].audio.channels[0],fxPacked.slots[0].audio.channels[0]);
+  w.adjustSlot(evalApp('slots[0]'));
+  const fittingDialog=[...w.document.querySelectorAll('dialog')].find(d=>d.querySelector('.source-bpm'));
+  assert.equal(fittingDialog.querySelector('.source-bpm').value,'110');
+  assert.equal(fittingDialog.querySelector('.fx-echo').value,'0.35');
+  fittingDialog.close();
   // Trim preserves channels and raw data, fades boundaries, and rejects reversed bounds.
   evalApp(`
     const raw=ctx.createBuffer(2,8000,8000);raw.getChannelData(0).fill(.5);raw.getChannelData(1).fill(-.25);
