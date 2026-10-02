@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node tests/regression.cjs && node tests/desktop.cjs && node tests/project-ui.cjs",
-    "dist:mac": "electron-builder --mac --arm64 --x64"
+    "dist:mac": "electron-builder --mac --arm64 --x64 --publish never"
   },
   "devDependencies": {
     "electron": "44.5.1",
