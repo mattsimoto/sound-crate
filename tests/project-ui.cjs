@@ -64,6 +64,16 @@ async function run(){
   }});
   const w=dom.window,evalApp=code=>w.eval(code);
   assert.equal(w.document.querySelectorAll('.slot').length,6);
+  assert.equal(w.document.querySelector('#crate').hidden,false);
+  assert.equal(w.document.querySelector('#padsPanel').hidden,true);
+  w.document.querySelector('#padsTab').click();
+  assert.equal(w.document.querySelector('#crate').hidden,true);
+  assert.equal(w.document.querySelector('#padsPanel').hidden,false);
+  w.document.querySelector('#mixerTab').click();
+  assert.equal(w.document.querySelector('#playBtn').closest('header')!==null,true);
+  assert.equal(w.document.querySelectorAll('.slot-more').length,6);
+  w.document.querySelector('#mixName').value='My calm mix';
+
   evalApp(`
     audio(); openCrate();
     const testBuffer=ctx.createBuffer(2,38400,8000);
@@ -76,6 +86,7 @@ async function run(){
     state.hype=true; updateSlotUI(slots[0]);
   `);
   const blob=await evalApp('saveProject(false)'),original=JSON.parse(await blob.text());
+  assert.equal(original.name,'My calm mix');
   assert.equal(original.version,2);assert.equal(original.sounds.length,1);
   assert.equal(await w.openProject(blob),true);
   assert.equal(evalApp('slots[0].mute'),true);assert.equal(evalApp('slots[0].lock'),true);
