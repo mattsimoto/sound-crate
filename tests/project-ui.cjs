@@ -33,6 +33,7 @@ async function run(){
     w.Blob=Blob;w.indexedDB=indexedDB;w.requestAnimationFrame=()=>0;
     w.cancelAnimationFrame=()=>{};
     w.HTMLMediaElement.prototype.pause=function(){};
+    w.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){},fillRect(){}});
     Object.defineProperty(w.navigator,'mediaDevices',{value:{
       enumerateDevices:async()=>[
         {kind:'audioinput',deviceId:'laptop',label:'Laptop mic'},
@@ -164,6 +165,42 @@ async function run(){
   for(let i=0;i<20 && evalApp('mic.phase')!=='recorded';i++) await new Promise(resolve=>setTimeout(resolve,5));
   assert.equal(evalApp('mic.phase'),'recorded');
   w.document.querySelector('#recordDialog').close();
+
+  // Trim preserves channels and raw data, fades boundaries, and rejects reversed bounds.
+  evalApp(`
+    const raw=ctx.createBuffer(2,8000,8000);raw.getChannelData(0).fill(.5);raw.getChannelData(1).fill(-.25);
+    const edited=editedBuffer(raw,.25,.75,.05,.05);
+    if(edited.length!==4000 || edited.getChannelData(0)[0]!==0 || edited.getChannelData(1)[3999]!==0)throw Error('Trim/fade boundaries');
+    if(edited.getChannelData(0)[1000]!==.5 || edited.getChannelData(1)[1000]!==-.25 || raw.getChannelData(0)[0]!==.5)throw Error('Stereo or raw preservation');
+  `);
+  assert.throws(()=>evalApp('editedBuffer(ctx.createBuffer(1,8000,8000),.8,.2,0,0)'));
+  // Collection-only recordings and pad choices survive project/recovery restoration.
+  evalApp(`
+    const extra={...state.ready[0],id:'collection-only',name:'Collection-only take'};
+    state.ready.push(extra);padAssignments[0]=extra.id;refreshPads();
+  `);
+  assert.equal(w.document.querySelectorAll('.sample-pad').length,8);
+  await w.triggerPad(0);
+  assert.equal(evalApp('padSources.size'),1);
+  evalApp('stopPadSources()');assert.equal(evalApp('padSources.size'),0);
+  await w.document.querySelector('#recordPads').onclick();
+  await w.triggerPad(0);
+  assert.equal(evalApp('padEvents.length'),1);
+  assert.equal(evalApp('padEvents[0].buffer.numberOfChannels')>=1,true);
+  await w.finishPads();assert.equal(evalApp('padRecording'),false);
+  assert.equal(w.document.querySelector('#recordPads').disabled,false);
+  const withCollection=await evalApp('saveProject(false,true)');
+  const packed=JSON.parse(await withCollection.text());
+  assert.equal(packed.sounds.some(it=>it.name==='Collection-only take'),true);
+  assert.equal(await w.openProject(withCollection),true);
+  assert.equal(evalApp('state.ready.find(it=>it.id===padAssignments[0]).name'),'Collection-only take');
+  evalApp('recoveryPending=false;recoverySignature=""');await w.saveRecovery();
+  const recovery=await evalApp(`sessionStore('readonly',store=>store.get('automatic-recovery'))`);
+  assert.ok(recovery.blob);assert.equal(JSON.parse(await recovery.blob.text()).sounds.some(it=>it.name==='Collection-only take'),true);
+  await w.checkRecovery();assert.equal(w.document.querySelector('#recoveryBanner').hidden,false);
+  await w.document.querySelector('#restoreRecovery').onclick();
+  assert.equal(w.document.querySelector('#recoveryBanner').hidden,true);
+  assert.equal(evalApp('state.playing'),false);
   assert.deepEqual(errors,[]);
   dom.window.close();
   console.log('PASS: UI, project/session restoration, history, adjustments, aligned exports, USB input selection, short-hit recording, permission denial, cancelled permission cleanup, disconnected microphone');
