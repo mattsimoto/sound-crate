@@ -1,111 +1,111 @@
 # Sound Crate
 
-A student-friendly sample-flipping music app for Mac and the web.
+**Collect sounds. Make something new.**
 
-Point it at a folder of sounds you forgot you had. Sound Crate listens to every file, works out its speed and key, then stretches and tunes six of them so they play together as a loop. Keep shuffling until something clicks.
+Sound Crate turns forgotten samples, microphone recordings, and everyday noises into a playable mix. Load a collection, shuffle sounds into the mixer, and fit them to a shared tempo and key. Built for quick experiments, music lessons, and getting an idea into your DAW.
 
-![Sound Crate with six sounds playing](docs/screenshot.png)
+**[Open Sound Crate →](https://mattsimoto.github.io/sound-crate/)** · Web app and Mac desktop app · Current version: **1.5.0**
 
-## Use it
+![Sound Crate's retro record-shop mixer, showing colored slots, waveforms, and simplified controls](docs/sound-crate-readme.jpg)
 
-**Online:** open https://mattsimoto.github.io/sound-crate (once GitHub Pages is turned on, see below).
+## Make your first mix
 
-**Offline on a Mac:** download `index.html`, rename it `Sound Crate.html` if you like, and double-click it. It opens in Safari or Chrome. To keep it handy, drag the file onto the right side of the Dock.
+1. Open the app and choose **Try the demo sounds**, or add your own audio files or folder.
+2. Press **Play**, set the **Speed** and **Key**, and use **Shuffle** until something clicks.
+3. Click a waveform to choose a sound. Use **New sound** to replace it, **Adjust** to shape it, and **⋯** for more slot options.
+4. Open **Export** to download a mix, stems, or a portable project.
 
-Your sounds are never uploaded anywhere. Everything happens inside the browser on your Mac.
+Your audio is processed locally in your browser or desktop app. Sound Crate does not upload your sounds.
 
-## What it does
+## What you can do
 
-- Choose a sound folder, choose some files, or drop a folder onto the window
-- Try the built-in demo sounds if you don't have any files yet
-- Six slots: Drums, Bass, Chords, Melody, Texture and Wild card
-- Every sound is stretched to one speed and tuned to one key
-- Each slot has New sound, Lock, Mute, Solo, volume and left-or-right
-- Change the speed (70–160 bpm), the key, and the loop length (1, 2 or 4 bars)
-- Save the mix as a WAV file, or save each sound on its own
-- In the desktop app, drag individual or all fitted stem WAVs into a DAW
+| Feature | How it works |
+| --- | --- |
+| Flexible mixer | Start with Drums, Bass, Chords, Melody, Texture, and Wild card. Use 1–12 slots, with no more than four across. |
+| Find a combination | Shuffle, lock keepers, mark favorites, choose source folders, and try a different slice of a sample. |
+| Shape each slot | Volume, pan, mute, solo, gain, octave, half/double time, a 16-step gate, and four-bar repeats. |
+| Better sound fitting | Correct source tempo and key, choose a start offset, and shift pitch independently of tempo. |
+| Simple effects | Echo, Reverb, Filter, and Crunch, with bypass for comparison. |
+| Record and trim | Capture a laptop or USB microphone, trim the take, remove edge silence, and add fades. |
+| Playable pads | Assign eight sounds, play them with the keyboard, and record a performance into your collection. |
+| Keep your work | Undo/redo, named saved sessions, portable projects, and automatic recovery. |
+| Choose your look | Retro record-shop branding, colored instrument slots, and light/dark modes in **Settings**. |
 
-Shortcuts: **Space** plays or stops, **R** shuffles everything.
+The main controls stay visible. **Session** handles projects and saved sessions; **Add sound** handles imports and recording; **Mix options** holds loop length and extra mixer controls.
 
-## Save a project and continue later
+## Record something
 
-Click **Save project** to download a `.soundcrate` file. It includes the chosen source sounds, the exact fitted loops, tempo, key, loop length, locks, mute/solo states, volume, and pan. Click **Open project** on either screen to restore it, then press Play. The original sound folder is not needed.
+Choose microphone recording from **Add sound**. Enable microphone access, select your laptop or USB input, and check the meter. Record a take, stop, preview it, then open **Edit** for trim points, silence trimming, and fade controls.
 
-Projects include only the chosen sounds, so shuffle draws from those sounds after reopening. Load the original folder to explore its full collection. WAV exports are separate listening/GarageBand files and cannot restore project settings. Keep the project file somewhere you can find it; there is no automatic save. Maximum project size is 200 MB.
+Name the take, choose its role and destination, and add it to the collection. Short hits such as claps and taps are supported. Download the original or edited WAV if you want a separate copy. Microphone takes are limited to two minutes.
 
-Starting a new folder resets slot controls to their defaults while keeping your chosen speed, key, and loop length. Switching folders during analysis cancels the old work and processes the new folder.
+Recording requires microphone permission and the HTTPS web app or desktop app. After connecting a new USB input, refresh the microphone list.
 
-## Development checks
+## Play the pads
 
-Run `npm ci` then `npm test` for syntax, audio serialization, loading/reset regression checks, native file validation, project v1/v2 compatibility, dynamic-slot restoration, undo/redo, slot adjustments, IndexedDB saved sessions, and aligned WAV export lengths. UI tests simulate the audio graph; listening and native DAW acceptance tests need a Mac.
+Switch to **Pads** and assign sounds from your collection. Pads play original one-shot sounds rather than fitted mixer loops. Record up to 60 seconds of pad playing, then add the performance as a new sound.
 
-## Good to know
+| Shortcut | Action |
+| --- | --- |
+| Space | Play / stop the mixer |
+| R | Shuffle unlocked slots |
+| A, S, D, F / J, K, L, ; | Play the eight pads |
+| Ctrl/Cmd + Z | Undo |
+| Ctrl/Cmd + Shift + Z | Redo |
 
-- Works best with music loops. File names that include the tempo and key, like `Bass_120bpm_Am.wav`, make it more accurate.
-- Sounds shorter than 1.5 seconds are skipped.
-- Reads .wav, .aif, .mp3, .m4a, .flac, .ogg and .caf files.
-- Dragging sounds out of the app only works in Chrome. In Safari, use Save each sound instead.
+## Fit and finish a sound
 
-## How it works
+Open **Adjust → Sound fitting** when a sample's detected tempo or key needs correcting. Filename hints such as `Bass_120bpm_Am.wav` help; audio estimates are approximate. You can enter the source tempo and key, disable tuning, move the start point, and add an extra semitone shift.
 
-It's one HTML file with no dependencies, using the Web Audio API.
+**Auto** uses beat slices for drums to preserve attacks and smooth stretching for sustained sounds. You can also select either fitting method manually. Pitch shifting changes pitch; it does not turn a major recording into a minor one.
 
-1. **Tempo:** finds the loud hits in each sound and looks for a repeating pattern. If the file is a clean loop, its length in bars is used to pin the exact tempo. A tempo in the file name wins over both.
-2. **Key:** measures how much of each of the 12 notes is in the sound and compares that to typical major and minor key patterns.
-3. **Role:** guesses drums, bass, chords and so on from the file name, or from how bright and how tuneful the sound is.
-4. **Fitting:** cuts a bar-aligned chunk, time-stretches it with WSOLA so the speed matches, resamples it to shift the pitch into the chosen key, then evens out the volume.
+**Simple effects** adds half-beat Echo, small-room Reverb, a low-pass Filter, and Crunch distortion. Effects are included in fitted loops, WAV exports, and desktop DAW drags. Echo and reverb wrap within the loop so stems remain aligned. Use **Bypass effects** to compare.
 
-## Credits
+## Save, recover, and export
 
-Inspired by [Upcycle](https://arialabs.io/upcycle) by Aria Labs. If you make music on a Mac and want the real thing, go get it. Sound Crate is an independent learning project and isn't affiliated with Aria Labs.
+- **Saved sessions:** keep named mixes on this browser or desktop profile.
+- **Save project:** download a portable `.soundcrate` file with selected source sounds, pad assignments, fitted loops, and mixer settings. Open it on another installation without needing the original source folder. The project limit is 200 MB.
+- **Automatic recovery:** periodically saves the full collection, pads, and settings on this device. After reopening, restore or discard the recovery offered by the app.
+- **Export:** download a 4/8/16/32-bar mix or equal-length stem WAVs. Dry stems include occupied slots; mixed stems respect mute/solo, volume, pan, and gain. Mix export also includes master processing.
 
-## Version history
+Portable projects keep selected mixer and pad sounds rather than the whole imported collection. Reload the original folder to explore its other sounds. Clearing browser/app data removes local sessions and recovery, so keep a project file for a durable backup.
 
-- **1.3.0** — laptop/USB microphone recording, input selection and meter, take preview, short-hit support, raw WAV saving, and Mac microphone permissions
-- **1.2.0** — named saved sessions, 1–12 configurable slots, source-folder selection, favorites, slice rerolls, safe/wild selection, slot adjustments, history, compact view, Hype EQ, aligned exports, and native Mac drag support
-- **1.1.0** — reliable folder switching, complete slot reset, and portable Save/Open Project files
-- **1.0.0** — first version
+## Mac desktop app
 
-## Record from a laptop or USB microphone
+The Electron app supports native WAV dragging into compatible DAWs. Drag a slot's **Drag WAV** tab, or use the stem-drag option in **Export**. Browser downloads are the reliable alternative when native dragging is unavailable.
 
-Click **Record a sound** on the start screen or mixer. Plug in a USB microphone if needed, choose it from the **Microphone** menu, then click **Enable microphone** to allow access and check the input meter. If device names are hidden, enable microphone access first; use **Refresh** after connecting a new input.
+Download DMG/ZIP builds from a successful [Build Sound Crate for Mac workflow run](https://github.com/mattsimoto/sound-crate/actions/workflows/desktop.yml), under **Artifacts → Sound-Crate-Mac**. Builds target Apple Silicon and Intel Macs. They are unsigned and not notarized, so macOS may block first launch.
 
-Click **Record**, make your sound, then **Stop**. Preview the take, name it, choose its type and destination slot, and click **Add sound**. Recordings appear in the **Recordings** source folder and can be chosen for other slots. Short hits such as claps or taps are supported and repeat on the beat when fitted. Takes are limited to two minutes. Playback pauses for recording; the input is not sent to the speakers.
+Native drag acceptance and microphone behavior still need hands-on testing in Mac DAWs.
 
-**Save original WAV** keeps a separate copy of the raw take. Selected recordings also travel with saved sessions and portable project files. The imported sound collection itself is temporary, so download originals you want to keep. Recording works on the HTTPS website and in the desktop app. macOS/browser microphone permissions must be allowed. If macOS permission was denied, enable it in System Settings → Privacy & Security → Microphone and restart the desktop app.
+## Run and develop
 
-## New mixer controls
+The web app lives in `index.html` and uses the Web Audio API. Open it in a modern browser for file-based mixing, or use the hosted HTTPS app for recording.
 
-Add/remove up to 12 slots and choose each slot's role and source folder. Choose sound searches the imported collection. New slice cycles through bar-aligned sections of the same file. Star favorites to favor them in safe shuffles. Wild → Safe controls how closely selections match roles and tempo. Adjust provides gain, half/double time, octave, a 16-step gate, and a four-bar repeat. Undo/redo stores up to 12 mixer changes. Compact hides secondary controls; Hype adds gentle bass/treble EQ.
-
-Saved sessions keeps named mixes in this browser/app profile using IndexedDB. Clearing app/browser data removes them, so also save a portable project file. Export audio provides a 4/8/16/32-bar mix and equal-length stem WAVs. Dry stems include all occupied slots; mixed stems respect mute/solo and include volume, pan, and gain. Mix export also includes Hype and master compression.
-
-## Mac desktop app and DAW dragging
-
-The desktop app uses Electron native file dragging. Drag an individual slot's Save tab or Drag stems to DAW into GarageBand, Logic, Ableton, or another compatible DAW. Native dragging exports each fitted dry loop; use Export stems for longer files or mixer settings. This implementation still needs acceptance testing in those Mac DAWs.
-
-To run from source on a Mac with Node.js installed:
+With Node.js installed, run the desktop app:
 
 ```sh
 npm ci
 npm start
 ```
 
-To build Apple Silicon and Intel installers:
+Run regression checks:
 
 ```sh
+npm test
+```
+
+On a Mac, run the recording smoke check or build installers:
+
+```sh
+npm run test:recording
 npm run dist:mac
 ```
 
-The **Build Sound Crate for Mac** GitHub Actions workflow also creates DMG/ZIP artifacts after code changes. Download Sound-Crate-Mac from a successful run's Artifacts section. These builds are unsigned and are not notarized; macOS may block first launch. Signing requires the owner's Apple Developer credentials.
+Tests cover project compatibility, recovery, mixer controls, fitting, effects, and aligned exports. Simulated UI checks complement real listening and native device testing.
 
-See [explainer video feature coverage](docs/feature-coverage.md) for the control-by-control comparison and validation limits.
+Imports accept WAV, AIFF, MP3, M4A, FLAC, OGG, and CAF; actual decoding depends on the browser. Musical loops generally fit best. See [feature coverage and validation limits](docs/feature-coverage.md) for more detail.
 
+## Credits
 
-## Sound fitting and effects (v1.5)
-
-Open a slot’s **Adjust** panel to correct its original tempo, key, or start offset. Tempo fitting and pitch shifting are independent; use **Do not tune** to retain the source pitch, or add an extra semitone shift. Detection labels distinguish filename hints from audio estimates. Pitch shifting does not convert major recordings into minor.
-
-**Auto** fitting preserves drum attacks using beat slices. Choose **Smooth stretching** for sustained material or **Beat slices** for rhythmic sounds. Manual corrections belong to each slot and survive sessions, portable projects, history, and recovery.
-
-The **Simple effects** section offers half-beat Echo, small-room Reverb, a low-pass Filter, and Crunch distortion. Apply changes, then use **Bypass effects** in the slot menu for a comparison. Effects are baked into fitted loops, including exports and native DAW drags. Echo/reverb wrap within the loop rather than adding a tail, preserving aligned stem lengths. Effects processing includes peak protection; summed mixes still depend on track volumes.
+Created by Matthew Russell. Inspired by [Upcycle](https://arialabs.io/upcycle) by Aria Labs. Sound Crate is an independent learning project and is not affiliated with Aria Labs.
