@@ -23,7 +23,8 @@ async function run(){
   const slot={gen:0,item:{},buffer:{},peaks:{},part:3,lock:true,mute:true,solo:true,vol:0.2,panV:-1,stemUrl:'blob:old',
     el:{querySelector:s=>nodes[s]??= {value:null,removeAttribute:noop},classList:{remove:noop}}};
   let revoked;
-  Object.assign(context,{stop:noop,state:{session:1,renderToken:2},bpmTimer:null,clearTimeout:noop,
+  Object.assign(context,{stopPadSources:noop,padTimer:null,padRecording:false,padEvents:[],padTake:null,padAssignments:[],
+    $:()=>({disabled:false}),stop:noop,state:{session:1,renderToken:2},bpmTimer:null,clearTimeout:noop,
     past:[],future:[],updateHistoryButtons:noop,
     cache:new Map([['old',{}]]),slots:[slot],setPressed:noop,applyMix:noop,updateSlotUI:noop,updateButtons:noop,
     URL:{revokeObjectURL:u=>revoked=u}});
