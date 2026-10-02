@@ -4,7 +4,7 @@
 
 Sound Crate turns forgotten samples, microphone recordings, and everyday noises into a playable mix. Load a collection, shuffle sounds into the mixer, and fit them to a shared tempo and key. Built for quick experiments, music lessons, and getting an idea into your DAW.
 
-**[Open Sound Crate →](https://mattsimoto.github.io/sound-crate/)** · Web app and Mac desktop app · Current version: **1.5.1**
+**[Open Sound Crate →](https://mattsimoto.github.io/sound-crate/)** · Web app and Mac desktop app · Current version: **1.6.0**
 
 ![Sound Crate's retro record-shop mixer, showing colored slots, waveforms, and simplified controls](docs/sound-crate-readme.jpg)
 
@@ -72,6 +72,14 @@ Open **Adjust → Sound fitting** when a sample's detected tempo or key needs co
 **Auto** uses beat slices for drums to preserve attacks and smooth stretching for sustained sounds. You can also select either fitting method manually. Pitch shifting changes pitch; it does not turn a major recording into a minor one.
 
 **Simple effects** adds half-beat Echo, small-room Reverb, a low-pass Filter, and Crunch distortion. Effects are included in fitted loops, WAV exports, and desktop DAW drags. Echo and reverb wrap within the loop so stems remain aligned. Use **Bypass effects** to compare.
+
+## Arrange song sections
+
+Open the **Song** tab and choose **Capture mixer** to turn the current mix into a section. Name it Intro, Verse, Chorus, Outro, or anything you like, and choose 1–32 bars. Return to the Mixer to make a variation, then capture the next section.
+
+Use **Section options** to update a section from the current mixer, duplicate it, move it up or down, or remove it. Each section is a frozen stereo mix with its own tempo and effects. Later mixer edits only affect it when you choose **Update from mixer**; sections do not restore editable individual tracks.
+
+**Play song** plays the sections in order and shows the current section. **Export song WAV** downloads the full arrangement. Sections are included in portable projects, saved sessions, and automatic recovery. Existing projects open with an empty song. Songs support up to 32 sections and ten minutes; the 200 MB project limit still applies.
 
 ## Save, recover, and export
 

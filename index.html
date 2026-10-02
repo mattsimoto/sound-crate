@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="version" content="1.5.1">
+<meta name="version" content="1.6.0">
 <title>Sound Crate</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23f39f16%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M3%2014v4M8%209v14M13%203v26M18%207v18M23%2011v10M28%2014v4%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -188,6 +188,7 @@ body{background:var(--cloud)}
 .slot .sliders label[for^=p],.slot .sliders input[id^=p]{display:none}.slot .meta{display:none}.slot .name{font-size:16px}.slot .reroll{margin:0}.slot .adjust-quick{background:transparent}.slot-states{font-size:12px;color:var(--muted);display:flex;gap:8px;min-height:0}.slot-states:empty{display:none}.slot-states span{background:var(--cloud);padding:3px 7px;border-radius:8px}.screen[role=button]{cursor:pointer}.screen[role=button]:focus-visible{outline:3px solid #f39f16;outline-offset:3px}
 .record-edit{margin:14px 0;border:1px solid var(--line);border-radius:12px;padding:14px}.record-edit summary{cursor:pointer;font-weight:600;margin-bottom:10px}.start-actions .menu-panel{right:auto;left:0}.start-actions{align-items:flex-start}
 @media(max-width:640px){.bar .brand{width:100%}.workspace-toolbar{padding:0 14px}.menu-panel{min-width:220px}.session-title{max-width:100%;flex:1}.grid{padding-bottom:140px}.dock-in{gap:8px}.dock .status{flex-basis:100%}}
+.song-section{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:18px;border:1px solid var(--line);border-left:6px solid #f39f16;border-radius:12px;margin:12px 0;background:var(--paper)}.song-section input{max-width:200px}.song-section input,.song-section select{padding:10px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px}
 </style>
 </head>
 <body>
@@ -372,7 +373,7 @@ const POOLS = {drums:['drums'], bass:['bass'], chords:['chords','melodic'], melo
 
 const state = {bpm:100, tonic:9, minor:true, bars:2,
   queue:[], ready:[], total:0, checked:0, skipped:0,
-  analyzing:false, started:false, playing:false, loopStart:0, loopLen:0, session:0, renderToken:0, busy:false};
+  songSections:[], songSources:[], songPlaying:false, songBusy:false, analyzing:false, started:false, playing:false, loopStart:0, loopLen:0, session:0, renderToken:0, busy:false};
 state.safety=80; state.hype=false;
 let appendMode=false, slotCounter=6;
 const past=[], future=[];
@@ -630,6 +631,7 @@ async function getBuffer(it, keep){
 function shuffleArr(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 function newSession(){
+  state.songSections=[]; if(typeof stopSong==='function') stopSong(); if(typeof refreshSong==='function') refreshSong();
   stop();
   stopPadSources(); clearTimeout(padTimer); padRecording=false;padEvents=[];padTake=null;padAssignments=Array(8).fill(null);
   $('#recordPads').disabled=false; $('#stopPads').disabled=true; $('#addPadTake').disabled=true;
@@ -981,7 +983,7 @@ function updateSlotUI(s){
 
 /* =================== playback =================== */
 function play(){
-  audio();
+  stopSong(); audio();
   if(!slots.some(s => s.buffer)) return;
   state.playing = true;
   state.loopStart = ctx.currentTime + 0.08;
@@ -989,6 +991,7 @@ function play(){
   updatePlayBtn();
 }
 function stop(){
+  if(typeof stopSong==='function') stopSong();
   state.playing = false;
   slots.forEach(stopSlot);
   updatePlayBtn();
@@ -1498,7 +1501,7 @@ function unpackBuffer(value){
   return buffer;
 }
 async function saveProject(exportFile=true,includeCollection=false){
-  if(!slots.some(s=>s.buffer) && !(includeCollection && state.ready.length)) return toast('Choose some sounds before saving.');
+  if(!slots.some(s=>s.buffer) && !state.songSections?.length && !(includeCollection && state.ready.length)) return toast('Choose some sounds before saving.');
   if(state.busy || slots.some(s=>s.el.classList.contains('loading'))) return toast('Wait for the sounds to finish fitting.');
   const ses=state.session, settings={bpm:state.bpm,tonic:state.tonic,minor:state.minor,bars:state.bars,safety:state.safety,hype:state.hype};
   const snapshot=slots.map(s=>({item:s.item,buffer:s.buffer,part:s.part,semis:s.semis,usedBeats:s.usedBeats,
@@ -1516,7 +1519,7 @@ async function saveProject(exportFile=true,includeCollection=false){
       await sleep(0);
     }
     if(ses!==state.session) return;
-    const project={format:'sound-crate',version:2,name:$('#mixName')?.value||'Untitled mix',settings,sounds,pads:padAssignments.map(id=>{const item=state.ready.find(it=>it.id===id);return ids.has(item)?ids.get(item):null;}),
+    const project={sections:(state.songSections||[]).map(s=>({name:s.name,bars:s.bars,bpm:s.bpm,audio:packBuffer(s.buffer)})),format:'sound-crate',version:2,name:$('#mixName')?.value||'Untitled mix',settings,sounds,pads:padAssignments.map(id=>{const item=state.ready.find(it=>it.id===id);return ids.has(item)?ids.get(item):null;}),
       slots:snapshot.map(s=>({...s,item:undefined,buffer:undefined,
         sound:s.item && s.buffer ? ids.get(s.item) : null, audio:s.buffer ? packBuffer(s.buffer) : null}))};
     const blob=new Blob([JSON.stringify(project)],{type:'application/json'});
@@ -1542,6 +1545,7 @@ async function openProject(file){
       (project.version===2 && (!Number.isFinite(p.safety) || p.safety<0 || p.safety>100 || typeof p.hype!=='boolean')))
       throw new Error('Invalid project');
     if(project.name!==undefined && (typeof project.name!=='string'||project.name.length>80))throw new Error('Invalid session name');
+    const sections=validateSongSections(project.sections);
     // Validate everything before replacing the current mix.
     const sounds=project.sounds.map((s,i)=>{
       const a=s.a;
@@ -1597,6 +1601,7 @@ async function openProject(file){
       }
       updateSlotUI(s);
     });
+    state.songSections=sections; refreshSong();
     padAssignments=(project.pads||Array(8).fill(null)).map(i=>i===null?null:sounds[i].id); refreshPads();
     slots.forEach(applyMix); updateStatus(); updateButtons();
     syncGlobalUI(); updateHype();
@@ -1766,7 +1771,7 @@ function updateButtons(){
   $('#exportStemsConfirm').disabled=!has || fitting;
   $('#dragStems').disabled = !has || state.busy || slots.some(s=>s.buffer && window.soundCrateDesktop && !s.nativeReady);
   $('#addSlot').disabled=slots.length>=12;
-  $('#saveProject').disabled = !has || state.busy || slots.some(s => s.el.classList.contains('loading'));
+  $('#saveProject').disabled = (!has && !state.songSections?.length) || state.busy || slots.some(s => s.el.classList.contains('loading'));
   $('#storeSession').disabled=!has || fitting;
   slots.forEach(s => { const rr=s.el.querySelector('.reroll'); rr.disabled = s.lock || !state.ready.length; });
 }
@@ -1949,27 +1954,103 @@ $('#addPadTake').onclick=()=>{if(!padTake)return;const name='Pad performance '+n
 document.addEventListener('keydown',e=>{if(e.repeat||e.ctrlKey||e.metaKey||e.altKey||document.querySelector('dialog[open]')||/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(e.target.tagName)||e.target.isContentEditable)return;const i=padKeys.indexOf(e.key.toLowerCase());if(i>=0&&document.body.classList.contains('has-crate')){e.preventDefault();triggerPad(i);}});
 /* Device-local recovery includes the collection, selected sounds, pad assignments and controls. */
 let recoveryPending=false,recoverySaving=false,recoverySignature='',recoveryBlob=null;
-function recoveryFingerprint(){return JSON.stringify({name:$('#mixName')?.value,session:state.session,settings:[state.bpm,state.tonic,state.minor,state.bars,state.safety,state.hype],pads:padAssignments,items:state.ready.map(it=>[it.id,it.favorite]),slots:slots.map(s=>[s.uid,s.item?.id,s.part,s.vol,s.panV,s.lock,s.mute,s.solo,s.gainDB,s.octave,s.timeFactor,s.steps,s.repeat4,s.folder,s.fitting,s.effects])});}
-async function saveRecovery(){if(recoveryPending||recoverySaving||state.busy||padRecording||!state.ready.length||slots.some(s=>s.el.classList.contains('loading')))return;const signature=recoveryFingerprint();if(signature===recoverySignature)return;recoverySaving=true;const session=state.session;try{const blob=await saveProject(false,true);if(!blob||session!==state.session)return;await sessionStore('readwrite',store=>store.put({id:'automatic-recovery',name:'Automatic recovery',time:Date.now(),blob}));recoverySignature=signature;$('#recoveryStatus').textContent='Automatically saved on this device · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});}catch{$('#recoveryStatus').textContent='Automatic recovery unavailable. Use Save project for a backup.';}finally{recoverySaving=false;}}
+function recoveryFingerprint(){return JSON.stringify({name:$('#mixName')?.value,session:state.session,settings:[state.bpm,state.tonic,state.minor,state.bars,state.safety,state.hype],sections:(state.songSections||[]).map(s=>[s.id,s.name,s.bars,s.bpm]),pads:padAssignments,items:state.ready.map(it=>[it.id,it.favorite]),slots:slots.map(s=>[s.uid,s.item?.id,s.part,s.vol,s.panV,s.lock,s.mute,s.solo,s.gainDB,s.octave,s.timeFactor,s.steps,s.repeat4,s.folder,s.fitting,s.effects])});}
+async function saveRecovery(){if(recoveryPending||recoverySaving||state.busy||padRecording||(!state.ready.length&&!state.songSections?.length)||slots.some(s=>s.el.classList.contains('loading')))return;const signature=recoveryFingerprint();if(signature===recoverySignature)return;recoverySaving=true;const session=state.session;try{const blob=await saveProject(false,true);if(!blob||session!==state.session)return;await sessionStore('readwrite',store=>store.put({id:'automatic-recovery',name:'Automatic recovery',time:Date.now(),blob}));recoverySignature=signature;$('#recoveryStatus').textContent='Automatically saved on this device · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});}catch{$('#recoveryStatus').textContent='Automatic recovery unavailable. Use Save project for a backup.';}finally{recoverySaving=false;}}
 async function checkRecovery(){try{const saved=await sessionStore('readonly',store=>store.get('automatic-recovery'));if(saved){recoveryPending=true;recoveryBlob=saved.blob;$('#recoveryMessage').textContent='Continue your session from '+new Date(saved.time).toLocaleString()+'?';$('#recoveryBanner').hidden=false;}}catch{$('#recoveryStatus').textContent='Automatic recovery unavailable. Save a project file to keep your work.';}}
 $('#restoreRecovery').onclick=async()=>{if(!recoveryBlob)return;const ok=await openProject(recoveryBlob);if(ok){recoveryPending=false;recoveryBlob=null;$('#recoveryBanner').hidden=true;recoverySignature=recoveryFingerprint();$('#recoveryStatus').textContent='Recovered your session. Press Play when ready.';}};
 $('#discardRecovery').onclick=async()=>{try{await sessionStore('readwrite',store=>store.delete('automatic-recovery'));recoveryPending=false;recoveryBlob=null;$('#recoveryBanner').hidden=true;recoverySignature='';}catch{toast('Could not clear recovery.');}};
 setInterval(()=>{refreshPads();saveRecovery();},5000);
+setInterval(()=>{if(!state.songPlaying)return;let elapsed=Math.max(0,ctx.currentTime-state.songStart),offset=0;for(let i=0;i<state.songSections.length;i++){const s=state.songSections[i],duration=songDuration(s);if(elapsed<offset+duration){$('#songStatus').textContent='Playing '+s.name+' · section '+(i+1)+' of '+state.songSections.length+' · '+elapsed.toFixed(0)+'s';break;}offset+=duration;}},250);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopPadSources();if(padRecording)finishPads();saveRecovery();}});
 refreshPads();checkRecovery();
 
 
+/* Song sections are frozen mixed loops: mixer edits affect a section only when updated. */
+function validateSongSections(value){
+  if(value===undefined)return [];
+  if(!Array.isArray(value)||value.length>32)throw new Error('Invalid song sections');
+  const sections=value.map(s=>{if(typeof s.name!=='string'||s.name.length>60||![1,2,4,8,16,32].includes(s.bars)||!Number.isInteger(s.bpm)||s.bpm<70||s.bpm>160)throw new Error('Invalid song section');const buffer=unpackBuffer(s.audio);if(buffer.duration>30)throw new Error('Section loop too long');return {id:crypto.randomUUID(),name:s.name,bars:s.bars,bpm:s.bpm,buffer};});
+  if(sections.reduce((n,s)=>n+songDuration(s),0)>600)throw new Error('Song exceeds ten minutes');return sections;
+}
+function songDuration(s){return s.bars*4*60/s.bpm;}
+function stopSong(){
+  for(const source of state.songSources||[]){try{source.stop();}catch{}}
+  state.songSources=[];state.songPlaying=false;
+  if($('#songStatus'))$('#songStatus').textContent='Song stopped.';
+}
+async function captureSongLoop(){
+  const live=slots.filter(s=>s.buffer),sr=ctx.sampleRate,length=Math.round(state.bars*4*60/state.bpm*sr);
+  const oc=new OfflineAudioContext(2,length,sr),master=oc.createGain(),bass=oc.createBiquadFilter(),air=oc.createBiquadFilter(),comp=oc.createDynamicsCompressor();
+  master.gain.value=state.hype?.7:.8;bass.type='lowshelf';bass.frequency.value=120;bass.gain.value=state.hype?3:0;air.type='highshelf';air.frequency.value=5000;air.gain.value=state.hype?2:0;setComp(comp);
+  master.connect(bass);bass.connect(air);air.connect(comp);comp.connect(oc.destination);
+  const solo=slots.some(s=>s.solo);
+  for(const s of live){if(s.mute||(solo&&!s.solo))continue;const src=oc.createBufferSource(),g=oc.createGain(),pan=oc.createStereoPanner();src.buffer=s.buffer;src.loop=true;g.gain.value=s.vol*s.vol*10**((s.gainDB||0)/20);pan.pan.value=s.panV;src.connect(g);g.connect(pan);pan.connect(master);src.start(0);src.stop(length/sr);}
+  return oc.startRendering();
+}
+async function captureSection(index=null){
+  if(state.songBusy||state.busy||state.analyzing||slots.some(s=>s.el.classList.contains('loading')))return toast('Wait for sound fitting to finish.');
+  if(!slots.some(s=>s.buffer))return toast('Choose sounds in the mixer first.');
+  if(index===null&&state.songSections.length>=32)return toast('A song can have up to 32 sections.');
+  stopSong();state.songBusy=true;refreshSong();const session=state.session,bpm=state.bpm;
+  try{const buffer=await captureSongLoop();if(session!==state.session)return;
+    const old=index===null?null:state.songSections[index];
+    const section={id:crypto.randomUUID(),name:old?.name||['Intro','Verse','Chorus','Outro'][state.songSections.length%4],bars:old?.bars||8,bpm,buffer};
+    if(state.songSections.reduce((n,s,i)=>n+(i===index?0:songDuration(s)),0)+songDuration(section)>600)return toast('Songs are limited to ten minutes.');
+    if(index===null)state.songSections.push(section);else state.songSections[index]=section;
+    toast(old?'Section updated from the mixer.':'Mixer captured as a song section.');
+  }catch{toast('Could not capture the section. Try again.');}finally{state.songBusy=false;refreshSong();}
+}
+function scheduleSong(context,out,sections,start=0){
+  let time=start;const sources=[];
+  for(const section of sections){const source=context.createBufferSource();source.buffer=section.buffer;source.loop=true;source.connect(out);source.start(time);time+=songDuration(section);source.stop(time);sources.push(source);}
+  return {sources,duration:time-start};
+}
+function playSong(){
+  if(!state.songSections.length||state.songBusy)return;audio();stop();stopPadSources();
+  state.songStart=ctx.currentTime+.08;const scheduled=scheduleSong(ctx,ctx.destination,state.songSections,state.songStart);state.songSources=scheduled.sources;state.songPlaying=true;
+  const last=scheduled.sources.at(-1);last.onended=()=>{if(state.songSources.at(-1)===last){state.songSources=[];state.songPlaying=false;$('#songStatus').textContent='Song finished.';}};
+  $('#songStatus').textContent='Playing '+state.songSections.length+' sections · '+scheduled.duration.toFixed(1)+' seconds';
+}
+async function exportSong(){
+  if(!state.songSections.length||state.songBusy)return;audio();state.songBusy=true;refreshSong();
+  const sections=[...state.songSections],duration=sections.reduce((sum,s)=>sum+songDuration(s),0),session=state.session;
+  try{const oc=new OfflineAudioContext(2,Math.ceil(duration*ctx.sampleRate),ctx.sampleRate);scheduleSong(oc,oc.destination,sections);const buffer=await oc.startRendering();if(session===state.session)download(wavBlob(buffer),safeName($('#mixName').value||'sound-crate')+'-song.wav');}
+  catch{toast('Could not export this song. Try fewer sections.');}finally{state.songBusy=false;refreshSong();}
+}
+function refreshSong(){
+  const list=$('#songSections');if(!list)return;list.replaceChildren();
+  const sections=state.songSections||[];
+  $('#captureSection').disabled=!!state.songBusy;$('#playSong').disabled=$('#exportSong').disabled=!sections.length||!!state.songBusy;
+  sections.forEach((section,index)=>{const row=document.createElement('article');row.className='song-section';
+    const name=document.createElement('input');name.value=section.name;name.maxLength=60;name.setAttribute('aria-label','Section '+(index+1)+' name');name.onchange=()=>{section.name=name.value.trim()||'Section '+(index+1);};
+    const bars=document.createElement('select');bars.setAttribute('aria-label','Section '+(index+1)+' bars');[1,2,4,8,16,32].forEach(n=>{const option=document.createElement('option');option.value=n;option.textContent=n+' bars';bars.append(option);});bars.value=section.bars;bars.onchange=()=>{stopSong();const previous=section.bars;section.bars=+bars.value;if(sections.reduce((n,s)=>n+songDuration(s),0)>600){section.bars=previous;toast('Songs are limited to ten minutes.');}refreshSong();};
+    const detail=document.createElement('span');detail.textContent=section.bpm+' bpm · '+songDuration(section).toFixed(1)+'s';
+    row.append(name,bars,detail);
+    const operations=[['Update from mixer',()=>captureSection(index)],['Duplicate',()=>{if(sections.length>=32||sections.reduce((n,s)=>n+songDuration(s),0)+songDuration(section)>600)return toast('Maximum 32 sections or ten minutes.');sections.splice(index+1,0,{...section,id:crypto.randomUUID()});}],['Move up',()=>{if(index)[sections[index-1],sections[index]]=[section,sections[index-1]];}],['Move down',()=>{if(index<sections.length-1)[sections[index+1],sections[index]]=[section,sections[index+1]];}],['Remove',()=>sections.splice(index,1)]];
+    const buttons=[];for(const [label,action]of operations){const button=document.createElement('button');button.className='btn';button.textContent=label;button.disabled=!!state.songBusy||(label==='Move up'&&index===0)||(label==='Move down'&&index===sections.length-1);button.onclick=()=>{stopSong();action();refreshSong();};buttons.push(button);}row.append(makeMenu('Section options',buttons));name.disabled=bars.disabled=!!state.songBusy;list.append(row);
+  });
+  $('#songTotal').textContent=sections.length?sections.length+' sections · '+sections.reduce((n,s)=>n+songDuration(s),0).toFixed(1)+' seconds':'Capture your first section from the mixer.';
+}
+const songPanel=document.createElement('section');songPanel.id='songPanel';songPanel.className='pads-panel';songPanel.hidden=true;songPanel.setAttribute('role','tabpanel');songPanel.setAttribute('aria-labelledby','songTab');
+songPanel.innerHTML='<h2>Build a song</h2><p>Capture the current mixer as a section. Change the mixer for your next section, then capture again. Each section keeps its own sound and tempo. Use Update from mixer to replace a section.</p><button class="btn sun" id="captureSection">Capture mixer</button> <button class="btn" id="playSong">Play song</button> <button class="btn" id="stopSong">Stop song</button> <button class="btn" id="exportSong">Export song WAV</button><p id="songTotal"></p><div id="songSections"></div><p id="songStatus" role="status"></p>';
+$('#crate').after(songPanel);$('#captureSection').onclick=()=>captureSection();$('#playSong').onclick=playSong;$('#stopSong').onclick=stopSong;$('#exportSong').onclick=exportSong;refreshSong();
 function makeMenu(label,nodes,ariaLabel){const d=document.createElement('details'),summary=document.createElement('summary'),panel=document.createElement('div');d.className='menu';summary.textContent=label;if(ariaLabel)summary.setAttribute('aria-label',ariaLabel);panel.className='menu-panel';nodes.filter(Boolean).forEach(n=>panel.append(n));d.append(summary,panel);return d;}
 function updateSlotIndicators(s){const bypass=s.el.querySelector('[data-act=bypassFX]');if(bypass){bypass.setAttribute('aria-pressed',String(!!s.effects?.bypass));bypass.textContent=s.effects?.bypass?'Enable effects':'Bypass effects';bypass.disabled=!['echo','reverb','filter','crunch'].some(k=>s.effects?.[k]>0);}const summary=s.el.querySelector('.slot-more>summary');if(summary)summary.setAttribute('aria-label','More options for '+s.title);const screen=s.el.querySelector('.screen');if(screen)screen.setAttribute('aria-label','Choose a sound for '+s.title);const container=s.el.querySelector('.slot-states');if(!container)return;container.replaceChildren();[['lock','Locked'],['solo','Solo'],['favorite','Favorite']].forEach(([key,label])=>{if(key==='favorite'?s.item?.favorite:s[key]){const badge=document.createElement('span');badge.textContent=label;container.append(badge);}});if(s.effects&&!s.effects.bypass&&['echo','reverb','filter','crunch'].some(k=>s.effects[k]>0)){const badge=document.createElement('span');badge.textContent='Effects';container.append(badge);}}
 function simplifySlot(s){const el=s.el,top=el.querySelector('.slot-top'),tools=el.querySelector('.slot-tools'),adjust=tools.querySelector('[data-act=adjust]');adjust.classList.add('btn','adjust-quick');adjust.textContent='Adjust';const nodes=['lock','solo','favorite'].map(act=>el.querySelector('[data-act='+act+']'));nodes[2].textContent='Favorite';const compare=document.createElement('button');compare.className='tg';compare.dataset.act='bypassFX';compare.textContent='Bypass effects';compare.setAttribute('aria-pressed','false');nodes.push(compare);nodes.push(tools.querySelector('[data-act=choose]'),tools.querySelector('[data-act=slice]'),tools.querySelector('.role-select'),tools.querySelector('.folder-select'),tools.querySelector('[data-act=remove]'));const more=makeMenu('⋯',nodes,'More options for '+s.title);more.classList.add('slot-more');top.append(more);const states=document.createElement('div');states.className='slot-states';top.after(states);el.append(adjust);tools.remove();const screen=el.querySelector('.screen');screen.setAttribute('role','button');screen.setAttribute('tabindex','0');screen.setAttribute('aria-label','Choose a sound for '+s.title);screen.title='Click to choose a sound. Use Drag WAV to export.';screen.addEventListener('click',e=>{if(!e.target.closest('.save'))chooseSound(s);});screen.addEventListener('keydown',e=>{if(e.target===screen&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();chooseSound(s);}});updateSlotIndicators(s);}
-function setWorkspace(view){const mixer=view==='mixer';$('#crate').hidden=!mixer;document.querySelector('.pads-panel').hidden=mixer;$('#mixerTab').setAttribute('aria-selected',String(mixer));$('#padsTab').setAttribute('aria-selected',String(!mixer));$('#mixerTab').tabIndex=mixer?0:-1;$('#padsTab').tabIndex=mixer?-1:0;$('#shuffleBtn').hidden=!mixer;$('#addSlot').hidden=!mixer;if(mixer){stopPadSources();if(padRecording)finishPads();slots.forEach(s=>draw(s,state.playing?phaseNow():null));}else refreshPads();}
+function setWorkspace(view){
+  for(const [name,panel] of [['mixer','crate'],['pads','padsPanel'],['song','songPanel']]){const tab=$('#'+name+'Tab'),el=$('#'+panel);if(el)el.hidden=view!==name;if(tab){tab.setAttribute('aria-selected',String(view===name));tab.tabIndex=view===name?0:-1;}}
+  $('#shuffleBtn').hidden=view!=='mixer';$('#addSlot').hidden=view!=='mixer';
+  stopPadSources();if(padRecording)finishPads();
+  if(view==='mixer')slots.forEach(s=>draw(s,state.playing?phaseNow():null));else if(view==='pads')refreshPads();else refreshSong();
+}
+
 function organizeUI(){
  const bar=document.querySelector('.bar'),brand=bar.querySelector('.brand'),dock=document.querySelector('.dock-in'),theme=brand.querySelector('.theme-switch'),speed=$('#bpmRange').closest('.ctrl'),key=$('#keySel').closest('.ctrl');
  const sessionTitle=document.createElement('input');sessionTitle.id='mixName';sessionTitle.className='session-title';sessionTitle.value='Untitled mix';sessionTitle.maxLength=80;sessionTitle.setAttribute('aria-label','Session name');bar.insertBefore(sessionTitle,brand.nextSibling);sessionTitle.addEventListener('input',()=>{$('#sessionName').value=sessionTitle.value;});
  const session=makeMenu('Session',[$('#openProject'),$('#saveProject'),$('#savedSets'),$('#newFolder')]);bar.append(session);$('#newFolder').textContent='New session';$('#newFolder').addEventListener('click',()=>{sessionTitle.value='Untitled mix';setWorkspace('mixer');});
  bar.append(makeMenu('Settings',[theme,$('#helpBtn')]));
  const transport=document.createElement('div');transport.className='transport-row';transport.append($('#playBtn'),speed,key);bar.append(transport);
- const toolbar=document.createElement('nav');toolbar.className='workspace-toolbar';toolbar.setAttribute('aria-label','Music workspace');const tabs=document.createElement('div');tabs.className='workspace-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Workspace');for(const [id,label,panel] of [['mixerTab','Mixer','crate'],['padsTab','Pads','padsPanel']]){const btn=document.createElement('button');btn.id=id;btn.textContent=label;btn.setAttribute('role','tab');btn.setAttribute('aria-controls',panel);btn.onclick=()=>setWorkspace(id==='mixerTab'?'mixer':'pads');btn.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'mixer':e.key==='End'?'pads':id==='mixerTab'?'pads':'mixer';setWorkspace(next);$(next==='mixer'?'#mixerTab':'#padsTab').focus();}};tabs.append(btn);}toolbar.append(tabs,$('#shuffleBtn'),$('#addSlot'),$('#undoBtn'));
+ const toolbar=document.createElement('nav');toolbar.className='workspace-toolbar';toolbar.setAttribute('aria-label','Music workspace');const tabs=document.createElement('div');tabs.className='workspace-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Workspace');for(const [id,label,panel] of [['mixerTab','Mixer','crate'],['padsTab','Pads','padsPanel'],['songTab','Song','songPanel']]){const btn=document.createElement('button');btn.id=id;btn.textContent=label;btn.setAttribute('role','tab');btn.setAttribute('aria-controls',panel);btn.onclick=()=>setWorkspace(id.replace('Tab',''));btn.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const views=['mixer','pads','song'],i=views.indexOf(id.replace('Tab',''));const next=e.key==='Home'?'mixer':e.key==='End'?'song':views[(i+(e.key==='ArrowRight'?1:2))%3];setWorkspace(next);$('#'+next+'Tab').focus();}};tabs.append(btn);}toolbar.append(tabs,$('#shuffleBtn'),$('#addSlot'),$('#undoBtn'));
  const demo=document.createElement('button');demo.className='btn';demo.textContent='Add demo music';demo.onclick=()=>loadDemo('music',true);
  const voicePack=document.createElement('button');voicePack.className='btn';voicePack.textContent='Add voice pack (synthetic)';voicePack.onclick=()=>loadDemo('voice',true);
  const ambientPack=document.createElement('button');ambientPack.className='btn';ambientPack.textContent='Add ambient pack';ambientPack.onclick=()=>loadDemo('ambient',true);

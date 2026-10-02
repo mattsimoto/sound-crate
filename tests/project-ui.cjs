@@ -232,8 +232,33 @@ async function run(){
   await w.document.querySelector('#restoreRecovery').onclick();
   assert.equal(w.document.querySelector('#recoveryBanner').hidden,true);
   assert.equal(evalApp('state.playing'),false);
+  // Sections capture independently, schedule without gaps, and survive portable projects.
+  w.setWorkspace('song');assert.equal(w.document.querySelector('#songTab').getAttribute('aria-selected'),'true');
+  assert.equal(w.document.querySelector('#songPanel').hidden,false);assert.equal(w.document.querySelector('#padsPanel').hidden,true);
+  await w.captureSection();assert.equal(evalApp('state.songSections.length'),1);
+  const captured=evalApp('state.songSections[0].buffer');
+  await w.captureSection();assert.equal(evalApp('state.songSections.length'),2);
+  assert.notEqual(evalApp('state.songSections[1].buffer'),captured);
+  evalApp('state.songSections[0].name="Intro";state.songSections[1].name="Chorus";state.songSections[1].bars=16');
+  const events=[];const graph={createBufferSource:()=>({connect(){},start:t=>events.push(['start',t]),stop:t=>events.push(['stop',t])})};
+  const result=w.scheduleSong(graph,{},evalApp('state.songSections'),.08);
+  assert.equal(events[1][1],events[2][1]);assert.ok(result.duration>0);
+  const songProject=await evalApp('saveProject(false)');assert.equal(JSON.parse(await songProject.text()).sections.length,2);
+  assert.equal(await w.openProject(songProject),true);assert.equal(evalApp('state.songSections[0].name'),'Intro');assert.equal(evalApp('state.songSections[1].bars'),16);
+  assert.deepEqual(Array.from(evalApp('state.songSections[0].buffer.getChannelData(0)')),Array.from(captured.getChannelData(0)));
+  const badSong=JSON.parse(await songProject.text());badSong.sections[0].bars=999;
+  assert.equal(await w.openProject(new Blob([JSON.stringify(badSong)])),undefined);assert.equal(evalApp('state.songSections.length'),2);
+  const songDownloads=[];const originalDownload=w.download;w.download=(blob,name)=>songDownloads.push({blob,name});
+  await w.exportSong();assert.equal(songDownloads.length,1);assert.ok(songDownloads[0].name.endsWith('-song.wav'));
+  const songWav=new DataView(await songDownloads[0].blob.arrayBuffer());
+  assert.equal(songWav.getUint32(40,true)/4,Math.ceil(result.duration*8000));w.download=originalDownload;
+  evalApp('recoveryPending=false;recoverySignature=""');await w.saveRecovery();
+  const songRecovery=await evalApp("sessionStore('readonly',store=>store.get('automatic-recovery'))");
+  assert.equal(JSON.parse(await songRecovery.blob.text()).sections.length,2);
+  w.playSong();assert.equal(evalApp('state.songPlaying'),true);w.stopSong();assert.equal(evalApp('state.songPlaying'),false);
+  w.newSession();assert.equal(evalApp('state.songSections.length'),0);
   assert.deepEqual(errors,[]);
   dom.window.close();
-  console.log('PASS: UI, project/session restoration, history, adjustments, aligned exports, USB input selection, short-hit recording, permission denial, cancelled permission cleanup, disconnected microphone');
+  console.log('PASS: song sections, scheduling, WAV duration, project/recovery round trips, UI, project/session restoration, history, adjustments, aligned exports, USB input selection, short-hit recording, permission denial, cancelled permission cleanup, disconnected microphone');
 }
 run().catch(err=>{console.error(err);process.exitCode=1;});
