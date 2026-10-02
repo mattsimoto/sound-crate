@@ -27,6 +27,18 @@ Your sounds are never uploaded anywhere. Everything happens inside the browser o
 
 Shortcuts: **Space** plays or stops, **R** shuffles everything.
 
+## Save a project and continue later
+
+Click **Save project** to download a `.soundcrate` file. It includes the six chosen source sounds, the exact fitted loops, tempo, key, loop length, locks, mute/solo states, volume, and pan. Click **Open project** on either screen to restore it, then press Play. The original sound folder is not needed.
+
+Projects include only the chosen sounds, so shuffle draws from those sounds after reopening. Load the original folder to explore its full collection. WAV exports are separate listening/GarageBand files and cannot restore project settings. Keep the project file somewhere you can find it; there is no automatic save. Maximum project size is 200 MB.
+
+Starting a new folder resets slot controls to their defaults while keeping your chosen speed, key, and loop length. Switching folders during analysis cancels the old work and processes the new folder.
+
+## Development checks
+
+Run `node tests/regression.cjs` to check JavaScript syntax, lossless project audio serialization, malformed audio rejection, control reset, and switching folders while decoding.
+
 ## Good to know
 
 - Works best with music loops. File names that include the tempo and key, like `Bass_120bpm_Am.wav`, make it more accurate.
@@ -49,4 +61,5 @@ Inspired by [Upcycle](https://arialabs.io/upcycle) by Aria Labs. If you make mus
 
 ## Version history
 
+- **1.1.0** — reliable folder switching, complete slot reset, and portable Save/Open Project files
 - **1.0.0** — first version
