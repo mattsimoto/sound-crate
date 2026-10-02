@@ -100,3 +100,12 @@ npm run dist:mac
 The **Build Sound Crate for Mac** GitHub Actions workflow also creates DMG/ZIP artifacts after code changes. Download Sound-Crate-Mac from a successful run's Artifacts section. These builds are unsigned and are not notarized; macOS may block first launch. Signing requires the owner's Apple Developer credentials.
 
 See [explainer video feature coverage](docs/feature-coverage.md) for the control-by-control comparison and validation limits.
+
+
+## Sound fitting and effects (v1.5)
+
+Open a slot’s **Adjust** panel to correct its original tempo, key, or start offset. Tempo fitting and pitch shifting are independent; use **Do not tune** to retain the source pitch, or add an extra semitone shift. Detection labels distinguish filename hints from audio estimates. Pitch shifting does not convert major recordings into minor.
+
+**Auto** fitting preserves drum attacks using beat slices. Choose **Smooth stretching** for sustained material or **Beat slices** for rhythmic sounds. Manual corrections belong to each slot and survive sessions, portable projects, history, and recovery.
+
+The **Simple effects** section offers half-beat Echo, small-room Reverb, a low-pass Filter, and Crunch distortion. Apply changes, then use **Bypass effects** in the slot menu for a comparison. Effects are baked into fitted loops, including exports and native DAW drags. Echo/reverb wrap within the loop rather than adding a tail, preserving aligned stem lengths. Effects processing includes peak protection; summed mixes still depend on track volumes.
