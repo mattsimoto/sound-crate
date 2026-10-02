@@ -105,7 +105,3 @@ npm run dist:mac
 Tests cover project compatibility, recovery, mixer controls, fitting, effects, and aligned exports. Simulated UI checks complement real listening and native device testing.
 
 Imports accept WAV, AIFF, MP3, M4A, FLAC, OGG, and CAF; actual decoding depends on the browser. Musical loops generally fit best. See [feature coverage and validation limits](docs/feature-coverage.md) for more detail.
-
-## Credits
-
-Created by Matthew Russell. Inspired by [Upcycle](https://arialabs.io/upcycle) by Aria Labs. Sound Crate is an independent learning project and is not affiliated with Aria Labs.
