@@ -11,7 +11,7 @@
 <style>
 :root{
   --ink:#1E2447; --cloud:#EEF1F8; --paper:#FFFFFF; --screen:#20264D;
-  --tomato:#FF6B4A; --sun:#FFD24D; --muted:#596084;
+  --tomato:#FF6B4A; --sun:#f39f16; --muted:#596084;
   --f:"Fredoka", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 *{box-sizing:border-box}
@@ -46,13 +46,13 @@ body.dragging .start-card{outline:4px dashed var(--tomato);outline-offset:8px}
 /* ---------- top bar ---------- */
 .app{display:none}
 body.has-crate .app{display:block}
-body.has-crate .start{display:none}
+body.has-crate .start,body.has-crate .start-theme{display:none}
 .bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;padding:18px 24px 14px;max-width:1280px;margin:0 auto}
 .brand{display:flex;align-items:center;gap:12px;margin-right:auto}
 .brand h1{font-size:28px;font-weight:700;margin:0;letter-spacing:-.015em}
 .logo{display:flex;gap:3px;align-items:flex-end}
 .logo i{width:9px;border:2px solid var(--ink);border-radius:4px 4px 2px 2px;display:block}
-.logo i:nth-child(1){height:18px;background:#FF8A65}.logo i:nth-child(2){height:24px;background:#B39DFF}.logo i:nth-child(3){height:20px;background:#5FD3B0}
+.logo i:nth-child(1){height:18px;background:#00687a}.logo i:nth-child(2){height:24px;background:#009a9b}.logo i:nth-child(3){height:20px;background:#95d6c0}
 .ctrl{display:flex;align-items:center;gap:8px;background:var(--paper);border:3px solid var(--ink);border-radius:14px;padding:6px 10px;box-shadow:0 4px 0 var(--ink)}
 .lbl{font-weight:600;color:var(--muted);font-size:15px}
 .mini{width:30px;height:30px;border:2px solid var(--ink);border-radius:9px;background:var(--cloud);font-weight:700;cursor:pointer;line-height:1}
@@ -118,16 +118,56 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
   .start-card{padding:26px 22px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+
+/* Retro record shop theme */
+:root{--ink:#082f38;--cloud:#f5eedb;--paper:#fff9e9;--screen:#06343d;--tomato:#009a9b;--sun:#f39f16;--muted:#50676a;--line:#d8d1ba;--header:#001e25;color-scheme:light}
+:root[data-theme=dark]{--ink:#f5eedb;--cloud:#082c34;--paper:#103a43;--screen:#001e25;--muted:#b3c9c7;--line:#35606a;color-scheme:dark}
+body{background:var(--cloud)}
+.btn,.ctrl,.mini,.tg,select,.seg button{border:1px solid var(--line);box-shadow:none}
+.btn{border-radius:12px;padding:10px 16px}.btn:active{box-shadow:none;transform:translateY(1px)}
+.btn[disabled]{box-shadow:none}.btn.sun{color:#001e25}.btn.tomato{color:#fff}
+.btn.ghost{border-color:var(--line);background:var(--paper)}
+.bar{max-width:1440px;gap:12px;padding:24px; background:var(--header);color:#fff9e9;border-radius:0 0 20px 20px}
+.brand{width:100%;margin-bottom:6px}.brand h1{text-transform:uppercase;letter-spacing:.02em}
+.brand small{display:block;font-size:13px;font-weight:400;letter-spacing:0;text-transform:none;color:#b5d9d4}
+.logo{width:68px;height:68px;flex:none}.logo svg{width:100%;height:100%}
+.ctrl{color:var(--ink);gap:8px;padding:8px 10px}.ctrl input{max-width:110px}
+.theme-switch{display:flex;gap:4px;margin-left:auto;border:1px solid #427078;border-radius:24px;padding:4px}
+.theme-switch button{border:0;background:transparent;color:#fff9e9;padding:8px 12px;border-radius:20px;cursor:pointer;font:inherit}
+.theme-switch button[aria-pressed=true]{background:#f39f16;color:#001e25}
+.start-theme{position:absolute;top:18px;right:18px;background:#001e25}
+.grid{max-width:1440px;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;padding-top:28px;padding-bottom:210px}
+.slot{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 14px #001e2510;padding:18px;gap:14px}
+.slot-top{gap:8px}.slot h2{width:100%;display:flex;gap:10px;align-items:center;font-size:21px;margin:0 0 4px}
+.instrument{width:30px;height:30px;display:inline-flex;color:var(--c)}.instrument svg{width:100%;height:100%}
+.slot-top .tg{border-radius:18px;padding:6px 10px;background:var(--cloud);color:var(--ink)}
+.tg[aria-pressed=true],.slot-top .tg[aria-pressed=true]{background:#00687a;color:#fff}
+.screen{height:120px;border:1px solid var(--line);border-radius:12px}
+.save{background:#00687a;color:#fff;padding:5px 9px}.meta{color:var(--muted)}
+.sliders{grid-template-columns:1fr;gap:7px}.sliders input{accent-color:var(--c);height:24px}
+.slot-tools{gap:8px}.slot-tools .tg{background:var(--cloud);color:var(--ink);padding:7px 10px}
+.reroll{background:var(--cloud);color:var(--ink)}
+.dock{background:var(--header);border-top:1px solid #35606a;color:#fff9e9}.dock-in{max-width:1440px}
+.dock .status{color:#b3c9c7}.play{background:#f39f16;border:0;box-shadow:none}.play svg{fill:#001e25}.play:active{box-shadow:none}
+.start-card,dialog{background:var(--paper);border:1px solid var(--line);box-shadow:0 8px 32px #001e2520}
+.start p,dialog p,dialog li{color:var(--muted)}
+.crate-art span{border:1px solid var(--line)}
+:focus-visible{outline-color:#009a9b}
+@media(max-width:1200px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:980px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.grid{grid-template-columns:1fr;padding-bottom:280px}.brand{flex-wrap:wrap}.brand h1{font-size:23px}.theme-switch{margin-left:0}.bar{padding:18px 14px}.start-theme{position:static;margin:12px auto;width:max-content}}
+
 </style>
 </head>
 <body>
 
 <!-- ============ START ============ -->
+<div class="theme-switch start-theme" aria-label="Color theme"><button data-theme-choice="light" aria-pressed="true">☀ Light</button><button data-theme-choice="dark" aria-pressed="false">☾ Dark</button></div>
 <section class="start" id="start">
   <div class="start-card">
     <div class="crate-art" aria-hidden="true">
-      <span style="--c:#FF8A65;height:70%"></span><span style="--c:#B39DFF;height:92%"></span><span style="--c:#5FD3B0;height:62%"></span>
-      <span style="--c:#FFD24D;height:100%"></span><span style="--c:#7CC4FF;height:76%"></span><span style="--c:#FF9AD5;height:84%"></span>
+      <span style="--c:#00687a;height:70%"></span><span style="--c:#009a9b;height:92%"></span><span style="--c:#95d6c0;height:62%"></span>
+      <span style="--c:#f39f16;height:100%"></span><span style="--c:#c34313;height:76%"></span><span style="--c:#a42532;height:84%"></span>
     </div>
     <h2>Turn your forgotten sounds into a beat</h2>
     <p>Pick a folder with sounds in it. Sound Crate listens to every file, then stretches and tunes them so they all play together at the same speed and in the same key.</p>
@@ -150,7 +190,7 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
 <!-- ============ APP ============ -->
 <div class="app">
   <header class="bar">
-    <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i></span><h1>Sound Crate</h1></div>
+    <div class="brand"><span class="logo" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><path d="M16 37V13h31v33" fill="#95d6c0" stroke="#fff9e9" stroke-width="2"/><path d="M29 35V9l29 5-3 37" fill="#f39f16" stroke="#fff9e9" stroke-width="2"/><circle cx="54" cy="32" r="21" fill="#a42532" stroke="#fff9e9" stroke-width="2"/><circle cx="54" cy="32" r="14" stroke="#001e25" stroke-width="4"/><circle cx="54" cy="32" r="4" fill="#ebdaab"/><path d="M7 36l30 11 35-10v30L37 78 7 65Z" fill="#009a9b" stroke="#fff9e9" stroke-width="2"/><path d="M37 47l35-10v30L37 78Z" fill="#d16d14" stroke="#fff9e9" stroke-width="2"/><path d="M8 46l29 11 34-10M8 56l29 11 34-10" stroke="#001e25" stroke-width="3"/><path d="M43 61l4-2 3 7 3-16 4 12 3-7 5-2" stroke="#fff9e9" stroke-width="2"/></svg></span><h1>Sound Crate<small>Collect sounds. Make something new.</small></h1><div class="theme-switch" aria-label="Color theme"><button data-theme-choice="light" aria-pressed="true">☀ Light</button><button data-theme-choice="dark" aria-pressed="false">☾ Dark</button></div></div>
     <div class="ctrl" title="How fast the music goes, in beats per minute">
       <span class="lbl">Speed</span>
       <button class="mini" id="slower" aria-label="Slower">−</button>
@@ -273,6 +313,12 @@ kbd{border:2px solid var(--ink);border-radius:6px;padding:0 6px;font-family:var(
 </dialog>
 
 <script>
+const rolePaths={drums:'M4 9c0-5 24-5 24 0v15c0 5-24 5-24 0V9m0 0c0 5 24 5 24 0M8 13v11m8-10v12m8-13v11',bass:'M12 18L25 3l4 3-14 15m-4-5c-6-3-11 3-7 9s12 4 13-2c1-4-2-7-6-7',chords:'M3 5h26v22H3zM10 5v22m6-22v22m6-22v22M8 5v12m6-12v12m6-12v12m6-12v12',melody:'M11 23V6l16-3v17M11 7l16-3M11 23c0 6-9 6-9 1s9-5 9-1m16-3c0 6-9 6-9 1s9-5 9-1',texture:'M3 9l13-6 13 6-13 6zM3 16l13 6 13-6M3 23l13 6 13-6',wild:'M5 5h22v22H5zM10 10h1m10 0h1m-6 6h1m-7 6h1m10 0h1',vocal:'M12 4h8v14h-8zM8 13v4c0 12 16 12 16 0v-4M16 26v4m-5 0h10'};
+function instrumentIcon(role){return `<span class="instrument" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${rolePaths[role]||rolePaths.wild}"/></svg></span>`;}
+function applyTheme(theme){document.documentElement.dataset.theme=theme;document.querySelectorAll('[data-theme-choice]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.themeChoice===theme)));try{localStorage.setItem('sound-crate-theme',theme)}catch{}}
+let initialTheme='light';try{initialTheme=localStorage.getItem('sound-crate-theme')||'light'}catch{}
+applyTheme(initialTheme==='dark'?'dark':'light');document.querySelectorAll('[data-theme-choice]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeChoice));
+
 "use strict";
 const $ = s => document.querySelector(s);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -280,12 +326,12 @@ const NOTE = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
 const AUDIO_EXT = /\.(wav|wave|aif|aiff|aifc|mp3|m4a|aac|flac|ogg|oga|opus|caf)$/i;
 
 const SLOT_DEFS = [
-  {role:'drums',   title:'Drums',     color:'#FF8A65'},
-  {role:'bass',    title:'Bass',      color:'#B39DFF'},
-  {role:'chords',  title:'Chords',    color:'#5FD3B0'},
-  {role:'melody',  title:'Melody',    color:'#FFD24D'},
-  {role:'texture', title:'Texture',   color:'#7CC4FF'},
-  {role:'wild',    title:'Wild card', color:'#FF9AD5'},
+  {role:'drums',   title:'Drums',     color:'#00687a'},
+  {role:'bass',    title:'Bass',      color:'#009a9b'},
+  {role:'chords',  title:'Chords',    color:'#95d6c0'},
+  {role:'melody',  title:'Melody',    color:'#f39f16'},
+  {role:'texture', title:'Texture',   color:'#c34313'},
+  {role:'wild',    title:'Wild card', color:'#a42532'},
 ];
 const POOLS = {drums:['drums'], bass:['bass'], chords:['chords','melodic'], melody:['melody','vocal','melodic'], texture:['texture','vocal','melodic'], wild:null};
 
@@ -639,13 +685,13 @@ function createSlot(d, i){
   el.style.setProperty('--c', d.color);
   el.innerHTML = `
     <div class="slot-top">
-      <h2>${d.title}</h2>
+      <h2>${instrumentIcon(d.role)}${d.title}</h2>
       <button class="tg" data-act="lock" aria-pressed="false" title="Keep this sound when you shuffle everything">Lock</button>
       <button class="tg" data-act="mute" aria-pressed="false" title="Turn this sound off">Mute</button>
       <button class="tg" data-act="solo" aria-pressed="false" title="Hear only the sounds marked Solo">Solo</button>
       <button class="tg" data-act="favorite" aria-pressed="false" title="Favor this sound when choosing new sounds">★</button>
     </div>
-    <div class="screen"><canvas></canvas><a class="save" draggable="true" title="Click to save this sound, or drag it into GarageBand">Save</a></div>
+    <div class="screen"><canvas></canvas><a class="save" draggable="true" title="Click to save this sound, or drag it into GarageBand">Drag WAV</a></div>
     <div class="name">Waiting for a sound</div>
     <div class="meta"></div>
     <div class="sliders">
@@ -698,14 +744,14 @@ function createSlot(d, i){
     try{ ev.dataTransfer.setData('DownloadURL', `audio/wav:${s.stemName}:${s.stemUrl}`); }catch(e){}
   });
   const roleSel=el.querySelector('.role-select');
-  [...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#FF9AD5'}].forEach(d=>{
+  [...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#a42532'}].forEach(d=>{
     const option=document.createElement('option'); option.value=d.role; option.textContent=d.title; roleSel.appendChild(option);
   });
   roleSel.value=s.role;
   roleSel.addEventListener('change',()=>{
     if(s.lock){ roleSel.value=s.role; return toast('Unlock this slot to change its role.'); }
-    remember(); const def=[...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#FF9AD5'}].find(d=>d.role===roleSel.value);
-    Object.assign(s,def); el.style.setProperty('--c',def.color); el.querySelector('h2').textContent=def.title;
+    remember(); const def=[...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#a42532'}].find(d=>d.role===roleSel.value);
+    Object.assign(s,def); el.style.setProperty('--c',def.color); el.querySelector('h2').innerHTML=instrumentIcon(def.role)+def.title;
     reroll(s);
   });
   el.querySelector('.folder-select').addEventListener('change',e=>{
@@ -1243,7 +1289,7 @@ function restoreMix(snapshot){
   slots.length=0;
   state.ready.forEach(it=>it.favorite=snapshot.favorites.includes(it.id));
   snapshot.slots.forEach(r=>{
-    const s=createSlot([...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#FF9AD5'}].find(d=>d.role===r.role),slotCounter++);
+    const s=createSlot([...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#a42532'}].find(d=>d.role===r.role),slotCounter++);
     Object.assign(s,r);
     ['lock','mute','solo'].forEach(act=>setPressed(s,act,s[act]));
     s.el.querySelector('input[id^="v"]').value=s.vol; s.el.querySelector('input[id^="p"]').value=s.panV;
@@ -1472,7 +1518,7 @@ async function openProject(file){
     newSession();
     slots.forEach(s=>{if(s.gain) s.gain.disconnect(); if(s.pan) s.pan.disconnect(); s.el.remove();});
     slots.length=0;
-    restored.forEach(r=>createSlot([...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#FF9AD5'}].find(d=>d.role===r.role),slotCounter++));
+    restored.forEach(r=>createSlot([...SLOT_DEFS,{role:'vocal',title:'Vocal',color:'#a42532'}].find(d=>d.role===r.role),slotCounter++));
     Object.assign(state,{bpm:p.bpm,tonic:p.tonic,minor:p.minor,bars:p.bars,safety:p.safety??80,hype:p.hype??false,
       ready:sounds,total:sounds.length,checked:sounds.length,started:true});
     $('#bpmRange').value=p.bpm; $('#bpmOut').textContent=p.bpm;
