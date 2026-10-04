@@ -211,6 +211,24 @@ select{background:var(--paper);border:1px solid var(--line);border-radius:3px;fo
 :root[data-theme=dark] body{background:repeating-linear-gradient(2deg,#0000 0 7px,#18100c28 8px 9px),linear-gradient(90deg,#291e18,#5f4430 8%,#493324 92%,#271d17)}:root[data-theme=dark] .slot{border-color:var(--line)}:root[data-theme=dark] .slot h2{color:#252c25!important}:root[data-theme=dark] .screen{border-color:#92866a;background:#162b24}:root[data-theme=dark] .btn.sun{color:#29261e}
 @media(max-width:980px){body{padding:14px 14px 0}.dock{left:14px;right:14px}.bar{padding:20px}.workspace-toolbar{padding:16px 20px}.grid{padding:8px 20px 120px}}
 @media(max-width:640px){body{padding:8px 8px 0}.bar{padding:18px 14px;gap:14px}.brand{min-width:100%;justify-content:center}.brand h1{font-size:23px}.session-title{max-width:100%;flex:1}.transport-row{flex-wrap:wrap}.workspace-toolbar{padding:14px;gap:10px}.workspace-tabs{width:100%;justify-content:center}.workspace-tabs button{flex:1;padding:10px}.grid{padding:4px 14px 180px;gap:16px}.dock{left:8px;right:8px}.dock-in{padding:12px}.pads-panel{padding:18px}.menu>summary{padding:9px 10px}}
+</style><style>
+/* Revision 2: separate equipment modules mounted on a walnut backboard. */
+.grid{gap:28px;padding:28px 28px 120px;background:repeating-linear-gradient(1deg,#0000 0 10px,#39231515 11px 12px),linear-gradient(100deg,#956740,#ab7d50 50%,#91603c);border-color:#715034}
+.slot{--ink:#34382f;--paper:#f5ecd7;--muted:#626151;--line:#b6aa89;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 85%,#fff3d5),var(--c));border:3px solid color-mix(in srgb,var(--c) 55%,#3c3828);border-bottom-width:7px;border-radius:9px;padding:20px 17px 17px;gap:14px;box-shadow:0 8px 0 #443124,0 13px 19px #281b1955,inset 0 2px 0 #fff7d580;isolation:isolate}
+.slot:before{content:'';position:absolute;inset:0;border-radius:6px;background:radial-gradient(circle at 8px 8px,#655d45 0 2px,#e6d5ae 2.3px 3px,transparent 3.5px),radial-gradient(circle at calc(100% - 8px) 8px,#655d45 0 2px,#e6d5ae 2.3px 3px,transparent 3.5px),radial-gradient(circle at 8px calc(100% - 8px),#655d45 0 2px,#e6d5ae 2.3px 3px,transparent 3.5px),radial-gradient(circle at calc(100% - 8px) calc(100% - 8px),#655d45 0 2px,#e6d5ae 2.3px 3px,transparent 3.5px);pointer-events:none;z-index:-1}.slot:after{display:none}
+.slot:nth-child(4n+1){--c:#8fa67a!important}.slot:nth-child(4n+2){--c:#d29274!important}.slot:nth-child(4n+3){--c:#d8bb67!important}.slot:nth-child(4n+4){--c:#be939f!important}
+.slot h2{flex-basis:100%;width:100%;margin:0 0 2px;padding:12px 10px;background:#f4e8c9;color:#34382f!important;border:1px solid #807456;border-radius:3px;box-shadow:0 2px 0 #4d452729;font-size:13px;letter-spacing:1.5px}
+.slot h2:after{content:'SC / 01';margin-left:auto;font:9px monospace;letter-spacing:0;color:#69664f}.slot:nth-child(4n+2) h2:after{content:'SC / 02'}.slot:nth-child(4n+3) h2:after{content:'SC / 03'}.slot:nth-child(4n+4) h2:after{content:'SC / 04'}
+.slot-top .tg{background:#f4e8cd;color:#34382f;border-color:#8d7e5c}.slot-more>summary{background:#f4e8cd;color:#34382f;border-color:#8d7e5c}
+.slot .screen{border:4px solid #5e624d;box-shadow:0 2px 0 #e9d9ab70,inset 0 3px 9px #0008;border-radius:4px;height:125px}
+.slot .name{background:#f4e8cd;color:#34382f;border:1px solid #938665;border-radius:3px;padding:8px 10px;min-height:49px;font-size:13px;box-shadow:inset 0 1px 3px #51422218}
+.slot .sliders{background:#ffffff18;border-top:1px solid #423b3533;border-bottom:1px solid #423b3533;padding:11px 1px 9px}.slot .sliders label{color:#34382f;font-weight:700}
+.slot .btn,.slot .reroll,.slot .adjust-quick{background:#f4e8cd;color:#34382f;border:1px solid #8d7e5c;box-shadow:0 2px 0 #4b402a40;border-radius:3px}.slot .reroll{background:color-mix(in srgb,var(--c) 25%,#f4e8cd)}.slot .btn:active{box-shadow:none}
+:root[data-theme=dark] .grid{background:repeating-linear-gradient(1deg,#0000 0 10px,#17100c20 11px 12px),linear-gradient(100deg,#382c21,#503c29 50%,#33271c);border-color:#66503b}
+:root[data-theme=dark] .slot{background:linear-gradient(135deg,color-mix(in srgb,var(--c) 80%,#f0d6a1),color-mix(in srgb,var(--c) 88%,#362d27));border-color:color-mix(in srgb,var(--c) 55%,#2b2820);box-shadow:0 8px 0 #171914,0 13px 19px #0006,inset 0 2px 0 #fff7d550}
+:root[data-theme=dark] .slot .name,:root[data-theme=dark] .slot .btn,:root[data-theme=dark] .slot .menu>summary,:root[data-theme=dark] .slot .slot-top .tg{background:#e9ddbf;color:#34382f}
+:root[data-theme=dark] .slot .screen{border-color:#555b45}
+@media(max-width:640px){.grid{gap:28px;padding:24px 16px 180px}.slot{padding:20px 18px 18px}.slot h2{font-size:14px}}
 </style></head>
 <body>
 
@@ -2109,7 +2127,7 @@ function readEffectControls(section){return validateEffects({echo:+section.query
 
 </script>
 <script>
-const previewNote=document.createElement('aside');previewNote.className='cabinet-note';previewNote.innerHTML='<span>SC–76 / CABINET THEME PREVIEW</span><span><button id="previewLight">Light preview</button> <button id="previewDark">Dark preview</button></span>';document.body.prepend(previewNote);document.querySelector('#previewLight').onclick=()=>applyTheme('light');document.querySelector('#previewDark').onclick=()=>applyTheme('dark');
+const previewNote=document.createElement('aside');previewNote.className='cabinet-note';previewNote.innerHTML='<span>SC–76 / MODULAR CABINET PREVIEW</span><span><button id="previewLight">Light preview</button> <button id="previewDark">Dark preview</button></span>';document.body.prepend(previewNote);document.querySelector('#previewLight').onclick=()=>applyTheme('light');document.querySelector('#previewDark').onclick=()=>applyTheme('dark');
 // Preview-only profile keeps demo/recovery separate from the published app.
 const cabinetLogo=document.querySelector('.brand .logo');if(cabinetLogo)cabinetLogo.innerHTML='<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="8" width="44" height="32" rx="2"/><path d="M7 14h34v13H7zM11 23l5-6 5 6m6 0 5-6 5 6"/><circle cx="12" cy="33" r="2"/><circle cx="24" cy="33" r="3"/><circle cx="36" cy="33" r="2"/></svg>';
 const subtitle=document.querySelector('.brand h1 small');if(subtitle)subtitle.textContent='Stereophonic sound workshop · SC–76';
