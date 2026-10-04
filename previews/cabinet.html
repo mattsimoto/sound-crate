@@ -197,7 +197,7 @@ body{background:var(--cloud)}
 body{font-family:var(--f);background:repeating-linear-gradient(2deg,#0000 0 7px,#4c291917 8px 9px),linear-gradient(90deg,#6f4731,#ae7b50 8%,#93603e 92%,#69452e);padding:24px 28px 0}
 body:before{content:'';position:fixed;inset:0;box-shadow:inset 0 0 45px #21150e70;pointer-events:none;z-index:30}
 .bar{max-width:1380px;margin:0 auto;border:1px solid #af9866;border-top:4px solid #c3a46c;border-radius:8px 8px 0 0;background:linear-gradient(110deg,var(--header),var(--paper));color:var(--ink);padding:25px 28px;box-shadow:0 3px 15px #25191045;gap:20px}
-.brand{min-width:235px;gap:12px}.brand h1{font-family:Georgia,serif;font-size:26px;font-weight:700;letter-spacing:2px;color:var(--ink)}.brand p{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}.brand .logo{width:46px;height:46px;color:var(--ink)}
+.brand{min-width:235px;gap:12px}.brand h1{font-family:Georgia,serif;font-size:26px;font-weight:700;letter-spacing:2px;color:var(--ink)}.brand h1 small,.brand p{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}.brand .logo{width:46px;height:46px;color:var(--ink)}
 .session-title{background:transparent!important;color:var(--ink)!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;font-family:Georgia,serif;font-style:italic;font-size:17px;max-width:215px}
 .transport-row{border-top:1px solid var(--line);padding-top:19px;gap:14px}.ctrl{background:transparent;border:0;border-radius:3px;color:var(--ink)}.ctrl label{font-size:10px;letter-spacing:1.8px;text-transform:uppercase}.ctrl output,.ctrl b{font-family:monospace}
 .btn,.mini,.menu>summary{border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink);box-shadow:0 2px 0 #74624430;font-size:12px;font-weight:600;letter-spacing:.25px;padding:10px 14px}.btn.sun,.play{background:#d8a253;color:#2c2c22;border:1px solid #9e793d;box-shadow:0 2px 0 #6d502533}.mini{border-radius:50%;width:32px;height:32px;padding:0;background:radial-gradient(circle at 35% 25%,#fff8e7,#ceba8d);color:#39352a}
@@ -2112,7 +2112,7 @@ function readEffectControls(section){return validateEffects({echo:+section.query
 const previewNote=document.createElement('aside');previewNote.className='cabinet-note';previewNote.innerHTML='<span>SC–76 / CABINET THEME PREVIEW</span><span><button id="previewLight">Light preview</button> <button id="previewDark">Dark preview</button></span>';document.body.prepend(previewNote);document.querySelector('#previewLight').onclick=()=>applyTheme('light');document.querySelector('#previewDark').onclick=()=>applyTheme('dark');
 // Preview-only profile keeps demo/recovery separate from the published app.
 const cabinetLogo=document.querySelector('.brand .logo');if(cabinetLogo)cabinetLogo.innerHTML='<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="8" width="44" height="32" rx="2"/><path d="M7 14h34v13H7zM11 23l5-6 5 6m6 0 5-6 5 6"/><circle cx="12" cy="33" r="2"/><circle cx="24" cy="33" r="3"/><circle cx="36" cy="33" r="2"/></svg>';
-const subtitle=document.querySelector('.brand p');if(subtitle)subtitle.textContent='Stereophonic sound workshop · SC–76';
+const subtitle=document.querySelector('.brand h1 small');if(subtitle)subtitle.textContent='Stereophonic sound workshop · SC–76';
 </script></body>
 </html>
 
