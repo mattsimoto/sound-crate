@@ -292,6 +292,18 @@ h1,h2,h3,button,input,select{font-family:var(--f)!important}
 .preview-strip{font-size:9px;letter-spacing:0;padding:6px 10px}.preview-strip button{padding:5px 7px}
 }
 @media(max-width:600px){.transport-row #playBtn{box-sizing:border-box!important;min-width:0!important;width:100%!important;font-size:13px!important;padding:6px!important}.transport-row .ctrl:has(#keySel){min-width:0!important;box-sizing:border-box!important}.transport-row .ctrl:has(#keySel) .lbl{flex:0 0 auto}.transport-row #keySel{min-width:0!important;flex:1 1 auto;box-sizing:border-box!important}}
+
+.slot[data-sound-role="drums"]{--c:#8270bd!important}
+.slot[data-sound-role="bass"]{--c:#58a8a3!important}
+.slot[data-sound-role="chords"]{--c:#deb94e!important}
+.slot[data-sound-role="melody"]{--c:#bb658c!important}
+.slot[data-sound-role="texture"]{--c:#739ec4!important}
+.slot[data-sound-role="wild"]{--c:#d78859!important}
+.slot[data-sound-role="vocal"]{--c:#cd90ab!important}
+.theme-switch{display:inline-flex;align-items:stretch;padding:3px!important;gap:3px!important;border-radius:999px!important;box-sizing:border-box;max-width:100%;overflow:hidden}
+.theme-switch button{border-radius:999px!important;margin:0!important;min-width:0;box-sizing:border-box;box-shadow:none!important;transform:none!important;flex:1 1 auto;line-height:1.2;padding:8px 12px!important}
+.theme-switch button[aria-pressed="true"]{border-radius:999px!important}
+.bar .theme-switch{display:none}
 </style></head>
 <body><div class="preview-strip"><span>COLOR POCKET / DESIGN PREVIEW</span><div><button onclick="applyTheme('light')">Light preview</button><button onclick="applyTheme('dark')">Dark preview</button></div></div>
 
@@ -951,7 +963,7 @@ async function rerollAll(){
   for(const s of targets){ if(ses!==state.session) return; await renderSlot(s); }
 }
 
-async function renderSlot(s){
+async function renderSlot(s){s.el.dataset.soundRole=s.role;
   const g = ++s.gen, it = s.item;
   if(!it){
     stopSlot(s); s.buffer=null; s.peaks=null; s.nativeReady=false;
