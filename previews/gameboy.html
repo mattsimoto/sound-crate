@@ -833,7 +833,7 @@ async function analyzeLoop(){
 /* =================== slots =================== */
 const slots = [];
 function createSlot(d, i){
-  const el = document.createElement('article');
+  const el = document.createElement('article');el.dataset.soundRole=d.role;
   el.className = 'slot empty';
   el.style.setProperty('--c', d.color);
   el.style.setProperty('--title-ink',['chords','melody'].includes(d.role)?'#001e25':'#fff9e9');
