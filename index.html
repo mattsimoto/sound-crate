@@ -190,7 +190,128 @@ body{background:var(--cloud)}
 @media(max-width:640px){.bar .brand{width:100%}.workspace-toolbar{padding:0 14px}.menu-panel{min-width:220px}.session-title{max-width:100%;flex:1}.grid{padding-bottom:140px}.dock-in{gap:8px}.dock .status{flex-basis:100%}}
 .song-section{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:18px;border:1px solid var(--line);border-left:6px solid #f39f16;border-radius:12px;margin:12px 0;background:var(--paper)}.song-section input{max-width:200px}.song-section input,.song-section select{padding:10px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px}
 </style>
-</head>
+<style>
+:root{--f:ui-monospace,"Courier New",monospace;--ink:#25243a;--cloud:#e9e6d6;--paper:#f7f3df;--screen:#bad080;--tomato:#b34770;--sun:#ead04c;--muted:#555464;--line:#79728d;--header:#6554a4}
+html[data-theme="dark"]{--ink:#f5efdb;--cloud:#242234;--paper:#373345;--screen:#bad080;--muted:#c8c2d6;--line:#9183aa;--header:#51438a}
+body{font-family:var(--f);background:var(--cloud);background-image:radial-gradient(#7a738b25 1px,transparent 1px);background-size:8px 8px}
+h1,h2,h3,button,input,select{font-family:var(--f)!important}
+.bar{background:var(--header);border-bottom:5px solid #39304c;color:#fff6dc;padding:20px 26px}
+.brand h1{font-size:25px;letter-spacing:1px;color:#fff6dc}
+.brand h1 small{font-size:11px;color:#dfd7fa;letter-spacing:1px;margin-top:7px}
+.brand .logo{background:#b5cd7f;border:4px solid #39304c;color:#314b31;border-radius:5px}
+.bar input{color:#25243a;background:#f6efd5;border:2px solid #39304c;border-radius:4px}
+.btn,button{border-radius:5px!important;font-weight:700;letter-spacing:.2px}
+.btn{border:2px solid #39304c;box-shadow:0 3px 0 #39304c}
+.btn:hover{transform:translateY(-1px)}
+.btn.sun{background:#ead04c;color:#25243a}
+.btn.tomato{background:#b34770;color:#fff}
+.transport-row{padding:18px;border:3px solid var(--line);border-radius:12px 12px 28px 12px;background:var(--paper);margin-bottom:18px;box-shadow:0 5px 0 #17132225}
+.workspace-toolbar{background:var(--paper);padding:12px;border:2px solid var(--line);border-radius:8px}
+.workspace-tabs{gap:7px}
+.workspace-tabs button{border:2px solid var(--line);background:var(--cloud);color:var(--ink)}
+.workspace-tabs button[aria-selected="true"]{background:#6554a4;color:#fff6dc;border-color:#39304c}
+.grid{gap:24px!important;padding:20px 2px 32px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.slot{--c:#8270bd!important;background:var(--c)!important;color:#25243a;border:3px solid #39304c!important;border-bottom:8px solid #39304c!important;border-radius:14px 14px 44px 14px!important;padding:16px!important;box-shadow:inset 2px 2px 0 #ffffff55,6px 7px 0 #17132228!important;position:relative}
+.slot:nth-child(4n+2){--c:#58a8a3!important}
+.slot:nth-child(4n+3){--c:#deb94e!important}
+.slot:nth-child(4n+4){--c:#bb658c!important}
+.slot-top{margin:0 0 12px!important;background:transparent!important;padding:0!important}
+.slot h2{background:none!important;color:#25243a!important;border:0!important;margin:0!important;padding:0!important;font-size:15px!important;letter-spacing:1px;text-transform:uppercase}
+.slot-top button{color:#25243a!important;background:#ffffff55!important;border:1px solid #39304c!important}
+.screen{background:#bad080!important;border:9px solid #45414f!important;border-top-width:15px!important;border-radius:7px 7px 20px 7px!important;box-shadow:inset 0 0 0 2px #617b41!important;margin:0 0 12px!important}
+.screen canvas{image-rendering:pixelated;background:#bad080!important}
+.name{color:#25243a!important;font-size:11px!important;min-height:30px;overflow-wrap:anywhere}
+.slot .sliders{color:#25243a!important}
+.slot .sliders label{font-weight:700;font-size:11px;text-transform:uppercase}
+.slot input[type=range]{accent-color:#39304c!important}
+.slot .save{color:#314b31!important;background:#bad080!important;border:1px solid #617b41!important;font-size:10px}
+.slot .reroll{background:#39304c!important;color:#fff6dc!important;border:2px solid #262032!important;border-radius:50px!important;box-shadow:0 3px 0 #262032}
+.slot .adjust-quick{background:#f6efd5!important;color:#39304c!important;border:2px solid #39304c!important;border-radius:50px!important}
+.slot::after{content:"▰ ▰ ▰";display:block;text-align:right;color:#39304c;letter-spacing:3px;font-size:14px;height:16px;margin:12px 7px 0 0;transform:rotate(-12deg)}
+.dock{background:var(--paper)!important;border-top:3px solid var(--line)}
+.dock-in{color:var(--ink)}
+.menu-panel,.dialog,.pads-panel,.song-panel{background:var(--paper)!important;color:var(--ink);border:3px solid var(--line)!important}
+.start-card{background:var(--paper)!important;border:4px solid #39304c;border-radius:18px 18px 55px 18px;box-shadow:8px 9px 0 #39304c}
+.preview-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 24px;background:#39304c;color:#fff6dc;font:700 11px var(--f);letter-spacing:1px}
+.preview-strip div{display:flex;gap:8px}.preview-strip button{background:#f6efd5;color:#39304c;border:0;padding:6px 11px}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.grid{grid-template-columns:1fr}.preview-strip{padding:9px 12px;letter-spacing:0}.bar{padding:16px}}
+.slot{min-width:0!important;box-sizing:border-box!important}.grid{width:100%;box-sizing:border-box}html,body{overflow-x:hidden}.dock-in,.dock-in #status,.dock-in #recoveryStatus,.dock-in span{color:var(--ink)!important;opacity:1!important}.slot .screen{margin-top:0!important}.slot-top{min-height:52px!important}.slot .name{font-size:12px!important}
+.slot{padding:14px!important;border-bottom-width:6px!important}.slot h2{font-size:18px!important;letter-spacing:.5px}.slot-top{min-height:38px!important;margin-bottom:8px!important}.slot .name{font-size:15px!important;line-height:1.35!important;min-height:40px!important;margin:8px 0!important}.slot .sliders label{font-size:13px!important}.slot .screen{height:94px!important;min-height:94px!important;border-width:7px!important;border-top-width:11px!important;margin-bottom:8px!important}.slot .reroll,.slot .adjust-quick{font-size:15px!important;padding:8px 10px!important;min-height:36px!important}.slot::after{margin-top:5px;height:10px;font-size:12px}.slot .save{font-size:12px!important}
+
+/* Keep the pocket module content within its inset shell. */
+.slot::after{content:none!important;display:none!important}
+.slot h2{flex:1 1 100%!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+.slot>.screen,.slot>.name,.slot>.sliders,.slot>.reroll,.slot>.adjust-quick{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+.slot>.screen{flex:none!important}
+.slot .sliders input{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+.slot .slot-top{min-width:0!important;max-width:100%!important}
+.slot .name{white-space:normal!important;overflow-wrap:anywhere!important}
+.slot .slot-tools{min-width:0;max-width:100%;flex-wrap:wrap}
+
+/* Compact modules and mobile controls: no inherited full-width flex sizing. */
+.slot{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"top top" "states states" "screen screen" "name name" "volume volume" "new adjust";gap:8px!important;align-content:start}
+.slot-top{grid-area:top;display:flex!important;flex-wrap:nowrap!important;gap:8px!important;min-height:36px!important;margin:0!important}
+.slot .slot-top h2{flex:1 1 auto!important;width:auto!important;min-width:0!important;font-size:16px!important;gap:6px!important}
+.slot-top>.tg,.slot-top>.slot-more{flex:0 0 auto;margin:0!important}
+.slot-top .instrument{width:22px;height:22px;flex:none}
+.slot-states{grid-area:states;min-width:0;overflow-wrap:anywhere}.slot-states:empty{display:none}
+.slot>.screen{grid-area:screen;height:76px!important;min-height:76px!important;margin:0!important}
+.slot>.name{grid-area:name;min-height:0!important;margin:0!important;line-height:1.3!important;font-size:14px!important}
+.slot>.sliders{grid-area:volume;grid-template-columns:auto minmax(0,1fr)!important;gap:10px!important;margin:2px 0!important}
+.slot>.reroll{grid-area:new}.slot>.adjust-quick{grid-area:adjust}
+.slot>.reroll,.slot>.adjust-quick{min-height:40px!important;font-size:14px!important;padding:7px 6px!important;margin:0!important}
+.transport-row,.transport-row .ctrl,.workspace-toolbar,.bar{box-sizing:border-box!important;min-width:0;max-width:100%}
+.transport-row .ctrl{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+.transport-row .ctrl input[type=range]{min-width:0!important;flex:1 1 60px;width:60px!important;max-width:110px}
+@media(max-width:600px){
+.bar{padding:12px!important;gap:8px!important}
+.brand h1{font-size:22px!important}.brand h1 small{display:none}.brand .logo{width:38px;height:38px}
+.bar .brand{margin:0!important}.bar .session-title{flex:1 1 130px;min-width:0!important;width:130px!important;max-width:100%;font-size:14px}
+.bar>.menu{flex:0 1 auto}.bar>.menu>summary{padding:8px!important;font-size:13px}
+.transport-row{padding:10px!important;gap:8px!important;margin:0!important;display:grid!important;grid-template-columns:80px minmax(0,1fr)}
+.transport-row #playBtn{grid-column:1;width:100%;min-height:42px;padding:8px!important;font-size:14px}
+.transport-row .ctrl{grid-column:1 / -1;width:100%!important;gap:6px!important;padding:7px!important}
+.transport-row .ctrl:has(#keySel){grid-column:2;grid-row:1;justify-content:space-between}
+.transport-row #keySel{min-width:0;width:100%;max-width:140px}
+.transport-row .lbl,.transport-row .unit{font-size:12px}.transport-row output{font-size:16px}
+.workspace-toolbar{margin:12px 10px 0!important;width:calc(100% - 20px)!important;padding:8px!important;gap:8px!important}
+.workspace-tabs{flex:1 1 100%;display:flex}.workspace-tabs button{flex:1;padding:8px!important}
+.workspace-toolbar>.btn,.workspace-toolbar>div>.menu>summary{font-size:13px;padding:8px!important}
+.grid{padding:12px 10px 100px!important;gap:12px!important}
+.slot{padding:12px!important;border-radius:12px 12px 28px 12px!important;gap:7px!important}
+.slot>.screen{height:68px!important;min-height:68px!important}
+.slot .slot-top h2{font-size:16px!important}.slot .slot-top .tg{padding:5px 7px!important;font-size:12px}
+.slot-more>summary{padding:4px 9px!important;font-size:18px!important}
+.slot .save{font-size:10px!important;padding:4px 6px!important}
+.dock-in{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px!important;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))!important}
+.dock .status{grid-column:1;flex-basis:auto!important;font-size:12px!important;min-width:0}
+.dock #exportButton{grid-column:2;grid-row:1 / 3;padding:8px 12px!important;font-size:14px}
+.dock .recovery-note{grid-column:1;font-size:10px!important;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+.preview-strip{font-size:9px;letter-spacing:0;padding:6px 10px}.preview-strip button{padding:5px 7px}
+}
+@media(max-width:600px){.transport-row #playBtn{box-sizing:border-box!important;min-width:0!important;width:100%!important;font-size:13px!important;padding:6px!important}.transport-row .ctrl:has(#keySel){min-width:0!important;box-sizing:border-box!important}.transport-row .ctrl:has(#keySel) .lbl{flex:0 0 auto}.transport-row #keySel{min-width:0!important;flex:1 1 auto;box-sizing:border-box!important}}
+
+.slot[data-sound-role="drums"]{--c:#8270bd!important}
+.slot[data-sound-role="bass"]{--c:#58a8a3!important}
+.slot[data-sound-role="chords"]{--c:#deb94e!important}
+.slot[data-sound-role="melody"]{--c:#bb658c!important}
+.slot[data-sound-role="texture"]{--c:#739ec4!important}
+.slot[data-sound-role="wild"]{--c:#d78859!important}
+.slot[data-sound-role="vocal"]{--c:#cd90ab!important}
+.theme-switch{display:inline-flex;align-items:stretch;padding:3px!important;gap:3px!important;border-radius:999px!important;box-sizing:border-box;max-width:100%;overflow:hidden}
+.theme-switch button{border-radius:999px!important;margin:0!important;min-width:0;box-sizing:border-box;box-shadow:none!important;transform:none!important;flex:1 1 auto;line-height:1.2;padding:8px 12px!important}
+.theme-switch button[aria-pressed="true"]{border-radius:999px!important}
+.bar .theme-switch{display:none}
+
+.theme-switch{margin-left:0!important;align-self:flex-start}
+.start-theme{left:24px!important;right:auto!important}
+.slot{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"top top top" "states states states" "screen screen screen" "name name name" "volume volume volume" "new record adjust"}
+.slot>.record-quick{grid-area:record;min-width:0;width:100%;box-sizing:border-box;background:#f6efd5!important;color:#39304c!important;border:2px solid #39304c!important;border-radius:50px!important;min-height:40px;font-size:14px;padding:7px 4px;margin:0}
+.slot>.reroll,.slot>.adjust-quick{font-size:13px!important;padding:7px 4px!important}
+@media(max-width:600px){.start-theme{left:12px!important;right:auto!important}}
+</style><style>.bar .menu-panel .theme-switch{display:inline-flex!important;margin:0!important;width:100%;justify-content:flex-start}.start-theme{margin-left:0!important}</style></head>
 <body>
 
 <!-- ============ START ============ -->
@@ -949,7 +1070,7 @@ const safeName = n => n.replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').slic
 const keyShort = () => NOTE[state.tonic] + (state.minor ? 'm' : '');
 const keyLong = (t, m) => `${NOTE[t]} ${m ? 'minor' : 'major'}`;
 
-function updateSlotUI(s){
+function updateSlotUI(s){s.el.dataset.soundRole=s.role;
   updateSlotIndicators(s);
   const it = s.item, el = s.el;
   el.classList.toggle('empty', !s.buffer);
@@ -1049,7 +1170,7 @@ function draw(s, phase){
   c.fillStyle='rgba(255,255,255,.08)';
   for(let b=1;b<beats;b++) c.fillRect(Math.round(b*w/beats), 0, 1, h);
   const n = s.peaks.length, bw = w/n;
-  const waveformColors={drums:'#62cbd9',bass:'#44ded5',chords:'#a9ead4',melody:'#ffc14d',texture:'#ff9b65',wild:'#ff8494',vocal:'#ff8494'};
+  const waveformColors={drums:'#25452b',bass:'#25452b',chords:'#25452b',melody:'#25452b',texture:'#25452b',wild:'#25452b',vocal:'#25452b'};
   const waveformColor=waveformColors[s.role]||'#a9ead4';
   for(let i=0;i<n;i++){
     const v = Math.max(0.03, s.peaks[i]) * h * 0.42;
@@ -1276,14 +1397,17 @@ function cancelRecording(){
   if(mic.recorder?.state==='recording') mic.recorder.stop();
   mic.recorder=null; mic.chunks=[]; releaseMic(); clearRecording(); mic.phase='idle';recordButtons();
 }
-async function showRecorder(){
+async function showRecorder(target=null){
+  const requested=slots.includes(target)?target:null;
+  if(requested?.lock){toast('Unlock this module before replacing its sound.');return;}
+  clearRecording(); mic.phase='idle';
   $('#recordDialog').showModal(); $('#recordTime').textContent='0:00';
   $('#recordName').value='Recording '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-  $('#recordRole').value='auto'; recordStatus('Choose a microphone, then press Record.'); recordButtons();
+  $('#recordRole').value=requested?.role||'auto'; recordStatus('Choose a microphone, then press Record.'); recordButtons();
   const select=$('#recordTarget'); select.replaceChildren();
   const collection=document.createElement('option');collection.value='';collection.textContent='Sound collection only';select.appendChild(collection);
   slots.forEach(s=>{const option=document.createElement('option');option.value=s.uid;option.textContent=s.title+(s.lock?' (locked)':'');option.disabled=s.lock;select.appendChild(option);});
-  select.value=(slots.find(s=>!s.lock && !s.item) || slots.find(s=>!s.lock))?.uid || '';
+  select.value=requested?.uid || (slots.find(s=>!s.lock && !s.item) || slots.find(s=>!s.lock))?.uid || '';
   try{await refreshMicInputs();}catch(error){recordStatus('Connect your microphone, then press Enable microphone.');}
 }
 function analyzeRecording(buffer,name,role){
@@ -1312,7 +1436,7 @@ async function addRecordedSound(){
   if(target && !target.lock){target.item=item;target.part=0;await renderSlot(target);}
   openCrate();slots.forEach(updateSlotUI);updateStatus();updateButtons();
   $('#recordDialog').close();
-  toast('Added '+name+'. Choose it from the Recordings folder or save your project.');
+  toast(target&&!target.lock?'Recorded sound added to '+target.title+'.':'Added '+name+' to your sound collection.');
 }
 
 /* =================== arranging and history =================== */
@@ -2036,7 +2160,7 @@ songPanel.innerHTML='<h2>Build a song</h2><p>Capture the current mixer as a sect
 $('#crate').after(songPanel);$('#captureSection').onclick=()=>captureSection();$('#playSong').onclick=playSong;$('#stopSong').onclick=stopSong;$('#exportSong').onclick=exportSong;refreshSong();
 function makeMenu(label,nodes,ariaLabel){const d=document.createElement('details'),summary=document.createElement('summary'),panel=document.createElement('div');d.className='menu';summary.textContent=label;if(ariaLabel)summary.setAttribute('aria-label',ariaLabel);panel.className='menu-panel';nodes.filter(Boolean).forEach(n=>panel.append(n));d.append(summary,panel);return d;}
 function updateSlotIndicators(s){const bypass=s.el.querySelector('[data-act=bypassFX]');if(bypass){bypass.setAttribute('aria-pressed',String(!!s.effects?.bypass));bypass.textContent=s.effects?.bypass?'Enable effects':'Bypass effects';bypass.disabled=!['echo','reverb','filter','crunch'].some(k=>s.effects?.[k]>0);}const summary=s.el.querySelector('.slot-more>summary');if(summary)summary.setAttribute('aria-label','More options for '+s.title);const screen=s.el.querySelector('.screen');if(screen)screen.setAttribute('aria-label','Choose a sound for '+s.title);const container=s.el.querySelector('.slot-states');if(!container)return;container.replaceChildren();[['lock','Locked'],['solo','Solo'],['favorite','Favorite']].forEach(([key,label])=>{if(key==='favorite'?s.item?.favorite:s[key]){const badge=document.createElement('span');badge.textContent=label;container.append(badge);}});if(s.effects&&!s.effects.bypass&&['echo','reverb','filter','crunch'].some(k=>s.effects[k]>0)){const badge=document.createElement('span');badge.textContent='Effects';container.append(badge);}}
-function simplifySlot(s){const el=s.el,top=el.querySelector('.slot-top'),tools=el.querySelector('.slot-tools'),adjust=tools.querySelector('[data-act=adjust]');adjust.classList.add('btn','adjust-quick');adjust.textContent='Adjust';const nodes=['lock','solo','favorite'].map(act=>el.querySelector('[data-act='+act+']'));nodes[2].textContent='Favorite';const compare=document.createElement('button');compare.className='tg';compare.dataset.act='bypassFX';compare.textContent='Bypass effects';compare.setAttribute('aria-pressed','false');nodes.push(compare);nodes.push(tools.querySelector('[data-act=choose]'),tools.querySelector('[data-act=slice]'),tools.querySelector('.role-select'),tools.querySelector('.folder-select'),tools.querySelector('[data-act=remove]'));const more=makeMenu('⋯',nodes,'More options for '+s.title);more.classList.add('slot-more');top.append(more);const states=document.createElement('div');states.className='slot-states';top.after(states);el.append(adjust);tools.remove();const screen=el.querySelector('.screen');screen.setAttribute('role','button');screen.setAttribute('tabindex','0');screen.setAttribute('aria-label','Choose a sound for '+s.title);screen.title='Click to choose a sound. Use Drag WAV to export.';screen.addEventListener('click',e=>{if(!e.target.closest('.save'))chooseSound(s);});screen.addEventListener('keydown',e=>{if(e.target===screen&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();chooseSound(s);}});updateSlotIndicators(s);}
+function simplifySlot(s){const el=s.el,top=el.querySelector('.slot-top'),tools=el.querySelector('.slot-tools'),adjust=tools.querySelector('[data-act=adjust]');adjust.classList.add('btn','adjust-quick');adjust.textContent='Adjust';const nodes=['lock','solo','favorite'].map(act=>el.querySelector('[data-act='+act+']'));nodes[2].textContent='Favorite';const compare=document.createElement('button');compare.className='tg';compare.dataset.act='bypassFX';compare.textContent='Bypass effects';compare.setAttribute('aria-pressed','false');nodes.push(compare);nodes.push(tools.querySelector('[data-act=choose]'),tools.querySelector('[data-act=slice]'),tools.querySelector('.role-select'),tools.querySelector('.folder-select'),tools.querySelector('[data-act=remove]'));const more=makeMenu('⋯',nodes,'More options for '+s.title);more.classList.add('slot-more');top.append(more);const states=document.createElement('div');states.className='slot-states';top.after(states);const record=document.createElement('button');record.className='btn record-quick';record.textContent='Record';record.setAttribute('aria-label','Record a sound for '+s.title);record.onclick=()=>showRecorder(s);el.querySelector('.reroll').textContent='Random';el.append(record,adjust);tools.remove();const screen=el.querySelector('.screen');screen.setAttribute('role','button');screen.setAttribute('tabindex','0');screen.setAttribute('aria-label','Choose a sound for '+s.title);screen.title='Click to choose a sound. Use Drag WAV to export.';screen.addEventListener('click',e=>{if(!e.target.closest('.save'))chooseSound(s);});screen.addEventListener('keydown',e=>{if(e.target===screen&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();chooseSound(s);}});updateSlotIndicators(s);}
 function setWorkspace(view){
   for(const [name,panel] of [['mixer','crate'],['pads','padsPanel'],['song','songPanel']]){const tab=$('#'+name+'Tab'),el=$('#'+panel);if(el)el.hidden=view!==name;if(tab){tab.setAttribute('aria-selected',String(view===name));tab.tabIndex=view===name?0:-1;}}
   $('#shuffleBtn').hidden=view!=='mixer';$('#addSlot').hidden=view!=='mixer';

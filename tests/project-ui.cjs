@@ -138,7 +138,14 @@ async function run(){
     assert.equal(bytes.byteLength,44+76800*4);
   }
   // Recording uses the explicitly selected USB device and preserves short hits.
-  await w.showRecorder();assert.equal(micRequests.length,0);
+  const otherSoundBefore=evalApp('slots[1].item?.id');
+  w.document.querySelectorAll('.record-quick')[4].click();
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(w.document.querySelector('#recordTarget').value,evalApp('slots[4].uid'));
+  assert.equal(w.document.querySelector('#recordRole').value,evalApp('slots[4].role'));
+  assert.equal(w.document.querySelectorAll('.record-quick').length,evalApp('slots.length'));
+  assert.equal(w.document.querySelector('.reroll').textContent,'Random');
+  assert.equal(micRequests.length,0);
   assert.equal(w.document.querySelectorAll('#micInput option').length,3);
   w.document.querySelector('#micInput').value='usb';
   evalApp(`ctx.decodeAudioData=async()=>{
@@ -157,6 +164,8 @@ async function run(){
   assert.equal(evalApp('state.ready[state.ready.length-1].name'),'USB clap');
   assert.equal(evalApp('state.ready[state.ready.length-1].buf.duration'),0.2);
   assert.equal(evalApp('state.ready[state.ready.length-1].folder'),'Recordings');
+  assert.equal(evalApp('slots[4].item.name'),'USB clap');
+  assert.equal(evalApp('slots[1].item?.id'),otherSoundBefore);
   assert.equal(await w.openProject(await evalApp('saveProject(false)')),true);
   assert.equal(evalApp('state.ready.some(it=>it.name==="USB clap")'),true);
   // Denials are actionable and closing an unanswered prompt releases its eventual stream.
